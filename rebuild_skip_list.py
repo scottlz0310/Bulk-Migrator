@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+"""
+SharePointクロールとスキップリスト再構築ツール
+"""
+import sys
+import os
+import json
+from dotenv import load_dotenv
+
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path, override=False)
+
+sys.path.insert(0, 'src')
+from transfer import GraphTransferClient
+
+def crawl_sharepoint():
+    """SharePoint TEST-Sharepoint配下をクロールしてファイルリストを生成"""
+    CLIENT_ID = os.getenv('CLIENT_ID')
+    CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+    TENANT_ID = os.getenv('TENANT_ID')
+    SITE_ID = os.getenv('DESTINATION_SHAREPOINT_SITE_ID')
+    DRIVE_ID = os.getenv('DESTINATION_SHAREPOINT_DRIVE_ID')
+
+    client = GraphTransferClient(CLIENT_ID, CLIENT_SECRET, TENANT_ID, SITE_ID, DRIVE_ID)
+    
+    print("=== SharePoint TEST-Sharepoint クロール開始 ===")
+    
+    # SharePoint側のファイルリストを取得（既存のlist_drive_itemsを使用）
+    sharepoint_files = client.list_drive_items("TEST-Sharepoint")
+    
+    # ファイル情報を整理してフルパスを生成
+    sharepoint_file_list = []
+    for item in sharepoint_files:
+        # SharePoint側のパス情報を再構築
+        file_path = item.get('parentReference', {}).get('path', '')
+        
+        # パスからTEST-Sharepoint以降を抽出
+        if '/TEST-Sharepoint' in file_path:
+            relative_path = file_path.split('/TEST-Sharepoint')[1]
+            if relative_path.startswith('/'):
+                relative_path = relative_path[1:]
+            full_path = os.path.join("TEST-Sharepoint", relative_path, item['name']).replace("\\", "/") if relative_path else f"TEST-Sharepoint/{item['name']}"
+        else:
+            full_path = f"TEST-Sharepoint/{item['name']}"
+        
+        sharepoint_file_list.append({
+            'name': item['name'],
+            'path': full_path,
+            'size': item.get('size'),
+            'lastModifiedDateTime': item.get('lastModifiedDateTime'),
+            'id': item.get('id'),
+        })
+    
+    # SharePointファイルリストを保存
+    os.makedirs('logs', exist_ok=True)
+    with open('logs/sharepoint_current_files.json', 'w', encoding='utf-8') as f:
+        json.dump(sharepoint_file_list, f, ensure_ascii=False, indent=2)
+    
+    print(f"SharePointクロール完了: {len(sharepoint_file_list)}ファイル")
+    return sharepoint_file_list
+
+def crawl_onedrive():
+    """OneDrive TEST-Onedriveをクロールしてファイルリストを生成"""
+    CLIENT_ID = os.getenv('CLIENT_ID')
+    CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+    TENANT_ID = os.getenv('TENANT_ID')
+    SITE_ID = os.getenv('DESTINATION_SHAREPOINT_SITE_ID')
+    DRIVE_ID = os.getenv('DESTINATION_SHAREPOINT_DRIVE_ID')
+    USER_PRINCIPAL_NAME = os.getenv('SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME')
+
+    client = GraphTransferClient(CLIENT_ID, CLIENT_SECRET, TENANT_ID, SITE_ID, DRIVE_ID)
+    
+    print("=== OneDrive TEST-Onedrive クロール開始 ===")
+    
+    file_targets = client.collect_file_targets_from_onedrive(
+        folder_path="TEST-Onedrive",
+        user_principal_name=USER_PRINCIPAL_NAME,
+        drive_id=None
+    )
+    
+    # OneDriveファイルリストを保存
+    with open('logs/onedrive_files.json', 'w', encoding='utf-8') as f:
+        json.dump(file_targets, f, ensure_ascii=False, indent=2)
+    
+    print(f"OneDriveクロール完了: {len(file_targets)}ファイル")
+    return file_targets
+
+def create_skip_list_from_sharepoint(onedrive_files, sharepoint_files):
+    """SharePointの転送済みファイルからスキップリストを構築"""
+    print("=== スキップリスト再構築開始 ===")
+    
+    # SharePointファイルの名前とサイズでマッピング作成
+    sharepoint_map = {}
+    for sp_file in sharepoint_files:
+        # TEST-SharepointをTEST-Onedriveに変換したパスを作成
+        converted_path = sp_file['path'].replace('TEST-Sharepoint', 'TEST-Onedrive')
+        key = (sp_file['name'], sp_file['size'], converted_path)
+        sharepoint_map[key] = sp_file
+    
+    skip_list = []
+    matched_count = 0
+    
+    for od_file in onedrive_files:
+        # OneDriveファイルに対応するSharePointファイルを検索
+        key = (od_file['name'], od_file['size'], od_file['path'])
+        if key in sharepoint_map:
+            skip_list.append(od_file)
+            matched_count += 1
+            print(f"マッチ: {od_file['path']}")
+    
+    # スキップリストを保存
+    with open('logs/skip_list.json', 'w', encoding='utf-8') as f:
+        json.dump(skip_list, f, ensure_ascii=False, indent=2)
+    
+    print(f"スキップリスト構築完了: {matched_count}/{len(onedrive_files)}ファイルが転送済み")
+    print(f"転送対象: {len(onedrive_files) - matched_count}ファイル")
+    
+    return skip_list
+
+if __name__ == "__main__":
+    # 1. SharePointをクロール
+    sharepoint_files = crawl_sharepoint()
+    
+    # 2. OneDriveをクロール  
+    onedrive_files = crawl_onedrive()
+    
+    # 3. スキップリストを構築
+    skip_list = create_skip_list_from_sharepoint(onedrive_files, sharepoint_files)
+    
+    print("\n=== 完了 ===")
+    print(f"OneDriveファイル数: {len(onedrive_files)}")
+    print(f"SharePoint転送済み: {len(sharepoint_files)}")
+    print(f"スキップリスト: {len(skip_list)}")
+    print(f"転送待ち: {len(onedrive_files) - len(skip_list)}")

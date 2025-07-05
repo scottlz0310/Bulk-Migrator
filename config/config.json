@@ -1,0 +1,14 @@
+{
+  "log_level": "INFO",
+  "chunk_size_mb": 10,
+  "max_parallel_transfers": 4,
+  "retry_count": 3,
+  "timeout_sec": 10,
+  "transfer_log_path": "logs/transfer.log",
+  "skip_list_path": "logs/skip_list.json",
+  "checksum_report_path": "logs/checksum_report.json",
+  "source_onedrive_user": "",
+  "destination_sharepoint_site": "",
+  "destination_sharepoint_doclib": "",
+  "sharepoint_root": "TEST-Sharepoint"
+}
