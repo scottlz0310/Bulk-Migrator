@@ -47,7 +47,14 @@ def main():
     sharepoint_root = os.getenv('DESTINATION_SHAREPOINT_DOCLIB', '')
 
     sharepoint_path = Path('logs/sharepoint_current_files.json')
-    transfer_log_path = Path('logs/transfer.log')
+    transfer_log_path = Path('logs/transfer_start_success_error.log')
+
+    if not sharepoint_path.exists():
+        print('logs/sharepoint_current_files.json が見つかりません')
+        return
+    if not transfer_log_path.exists():
+        print('logs/transfer_start_success_error.log が見つかりません')
+        return
 
     sharepoint = load_json(sharepoint_path)
     # SharePoint側のパスを正規化
