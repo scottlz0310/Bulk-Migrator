@@ -98,20 +98,20 @@ def create_skip_list_from_sharepoint(onedrive_files, sharepoint_files):
     onedrive_folder = os.getenv('SOURCE_ONEDRIVE_FOLDER_PATH', 'TEST-Onedrive')
     sharepoint_folder = os.getenv('DESTINATION_SHAREPOINT_DOCLIB', 'TEST-Sharepoint')
     
-    # SharePointファイルの名前とサイズでマッピング作成
+    # SharePointファイルの名前とパスのみでマッピング作成（サイズ・メタデータ無視）
     sharepoint_map = {}
     for sp_file in sharepoint_files:
         # SharePointフォルダをOneDriveフォルダに変換したパスを作成
         converted_path = sp_file['path'].replace(sharepoint_folder, onedrive_folder)
-        key = (sp_file['name'], sp_file['size'], converted_path)
+        key = (sp_file['name'], converted_path)
         sharepoint_map[key] = sp_file
-    
+
     skip_list = []
     matched_count = 0
-    
+
     for od_file in onedrive_files:
-        # OneDriveファイルに対応するSharePointファイルを検索
-        key = (od_file['name'], od_file['size'], od_file['path'])
+        # OneDriveファイルに対応するSharePointファイルを検索（サイズ・メタデータ無視）
+        key = (od_file['name'], od_file['path'])
         if key in sharepoint_map:
             skip_list.append(od_file)
             matched_count += 1

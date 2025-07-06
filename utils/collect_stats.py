@@ -22,11 +22,9 @@ def main():
         lines = f.readlines()
     success = sum(1 for l in lines if 'SUCCESS:' in l)
     error = sum(1 for l in lines if 'ERROR:' in l)
-    skip = sum(1 for l in lines if 'SKIP:' in l)
-    total = success + error + skip
+    total = success + error
     print(f"SUCCESS: {success}")
     print(f"ERROR: {error}")
-    print(f"SKIP: {skip}")
     print(f"合計: {total}")
     if total:
         print(f"成功率: {success/total*100:.2f}%")

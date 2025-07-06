@@ -222,9 +222,13 @@ class GraphTransferClient:
         payload = {
             "name": folder_name,
             "folder": {},
-            "@microsoft.graph.conflictBehavior": "rename"
+            "@microsoft.graph.conflictBehavior": "fail"
         }
         resp = requests.post(url, headers=self._headers(), json=payload)
+        if resp.status_code == 409:
+            # 既に存在する場合は何もしない（正常終了扱い）
+            print(f"[INFO] フォルダ既存: {os.path.join(parent_path, folder_name)}")
+            return {}
         resp.raise_for_status()
         return resp.json()
     def ensure_sharepoint_folder(self, folder_path: str) -> None:

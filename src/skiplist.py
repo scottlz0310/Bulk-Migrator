@@ -18,10 +18,9 @@ def save_skip_list(skip_list: List[Dict[str, Any]], path: str = SKIP_LIST_PATH):
 
 def is_skipped(file_info: Dict[str, Any], skip_list: List[Dict[str, Any]]) -> bool:
     for item in skip_list:
+        # パス＋ファイル名のみでスキップ判定（サイズ・タイムスタンプは無視）
         if (item.get('path') == file_info.get('path') and
-            item.get('name') == file_info.get('name') and
-            item.get('size') == file_info.get('size') and
-            item.get('lastModifiedDateTime') == file_info.get('lastModifiedDateTime')):
+            item.get('name') == file_info.get('name')):
             return True
     return False
 

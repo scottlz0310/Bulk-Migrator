@@ -9,6 +9,5 @@
   "checksum_report_path": "logs/checksum_report.json",
   "source_onedrive_user": "",
   "destination_sharepoint_site": "",
-  "destination_sharepoint_doclib": "",
-  "sharepoint_root": "TEST-Sharepoint"
+  "destination_sharepoint_doclib": ""
 }

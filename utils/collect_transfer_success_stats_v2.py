@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-OneDrive現状ファイル一覧（onedrive_files.json）とサクセスログ（transfer.log）を突き合わせ、
+
+初回クロール時のSharePoint現状ファイル一覧（sharepoint_current_files.json）とサクセスログ（transfer.log）を突き合わせ、
 - 上書き転送されたファイル数
 - 新規転送されたファイル数
 - サクセスログの総件数
@@ -13,7 +14,16 @@ OneDrive現状ファイル一覧（onedrive_files.json）とサクセスログ�
 """
 import json
 import re
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+def normalize_path(path, root):
+    """
+    指定したroot部分をパスから除去し、先頭の/を除いた相対パスに正規化
+    """
+    if path.startswith(root):
+        path = path[len(root):]
+    return path.lstrip('/\\')
 
 def load_json(path):
     with open(path, encoding='utf-8') as f:
@@ -30,15 +40,22 @@ def extract_success_paths(log_path):
     return paths
 
 def main():
-    onedrive_path = Path('logs/onedrive_files.json')
+    # .envからルート名を取得
+    dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+    load_dotenv(dotenv_path, override=False)
+    onedrive_root = os.getenv('SOURCE_ONEDRIVE_FOLDER_PATH', '')
+    sharepoint_root = os.getenv('DESTINATION_SHAREPOINT_DOCLIB', '')
+
+    sharepoint_path = Path('logs/sharepoint_current_files.json')
     transfer_log_path = Path('logs/transfer.log')
 
-    onedrive = load_json(onedrive_path)
-    onedrive_paths = set(e['path'] for e in onedrive)
-    success_paths = extract_success_paths(transfer_log_path)
+    sharepoint = load_json(sharepoint_path)
+    # SharePoint側のパスを正規化
+    sharepoint_paths = set(normalize_path(e['path'], sharepoint_root) for e in sharepoint)
+    success_paths = [normalize_path(p, sharepoint_root) for p in extract_success_paths(transfer_log_path)]
 
-    overwritten = [p for p in success_paths if p in onedrive_paths]
-    newly_created = [p for p in success_paths if p not in onedrive_paths]
+    overwritten = [p for p in success_paths if p in sharepoint_paths]
+    newly_created = [p for p in success_paths if p not in sharepoint_paths]
 
     print(f"サクセスログ(SUCCESS)件数: {len(success_paths)}")
     print(f"上書き転送されたファイル数: {len(overwritten)}")

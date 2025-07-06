@@ -1,3 +1,18 @@
+import requests
+import urllib3
+def retry_with_backoff(func, max_retries=3, wait_sec=10, *args, **kwargs):
+    """
+    ネットワーク系の一時的な失敗時にリトライする汎用関数
+    """
+    for attempt in range(1, max_retries + 1):
+        try:
+            return func(*args, **kwargs)
+        except (requests.exceptions.ConnectionError, urllib3.exceptions.MaxRetryError) as e:
+            print(f"[WARN] ネットワークエラー: {e} (リトライ {attempt}/{max_retries})")
+            if attempt == max_retries:
+                raise
+            import time
+            time.sleep(wait_sec)
 import sys
 import os
 import argparse
@@ -130,7 +145,7 @@ def get_onedrive_files(force_crawl=False):
     print(f"OneDriveファイル数: {len(file_targets)}")
     return file_targets
 
-def rebuild_skip_list(onedrive_files=None, force_crawl=False):
+def rebuild_skip_list(onedrive_files=None, force_crawl=False, verbose=False):
     """スキップリストを再構築する"""
     print("=== スキップリスト再構築開始 ===")
     
@@ -140,7 +155,7 @@ def rebuild_skip_list(onedrive_files=None, force_crawl=False):
     
     # SharePointをクロール（force_crawlの場合は強制的に新規クロール）
     if force_crawl:
-        sharepoint_files = crawl_sharepoint()
+        sharepoint_files = retry_with_backoff(crawl_sharepoint)
     else:
         # SharePointキャッシュの確認
         sharepoint_cache_file = 'logs/sharepoint_current_files.json'
@@ -163,7 +178,10 @@ def rebuild_skip_list(onedrive_files=None, force_crawl=False):
     print(f"SharePoint転送済み: {len(sharepoint_files)}")
     print(f"スキップリスト: {len(skip_list)}")
     print(f"転送待ち: {len(onedrive_files) - len(skip_list)}")
-    
+    if verbose:
+        print("\n-- スキップリスト入りファイル一覧 --")
+        for f in skip_list:
+            print(f"{f['path']}")
     return len(onedrive_files) - len(skip_list)
 
 def transfer_file(file_info, client, retry_count, timeout):
@@ -245,56 +263,41 @@ def run_transfer(onedrive_files=None):
 def main():
     """メイン処理"""
     parser = argparse.ArgumentParser(description='OneDrive to SharePoint 転送ツール')
-    parser.add_argument('--rebuild-skip', action='store_true', 
-                       help='スキップリストを再構築する（SharePointから転送済みファイルを検出）')
-    parser.add_argument('--clear-and-rebuild', action='store_true',
-                       help='スキップリストをクリアして再構築する')
-    parser.add_argument('--force-crawl', action='store_true',
-                       help='キャッシュを無視して強制的に全クロールする')
-    
+    parser.add_argument('--reset', action='store_true',
+                       help='ログ・キャッシュをクリアし、スキップリスト再構築のみ実行（転送は行わない）')
+    parser.add_argument('--full-rebuild', action='store_true',
+                       help='ログ・キャッシュをクリアし、スキップリスト再構築＋転送まで全て実行')
+    parser.add_argument('--verbose', action='store_true', help='詳細情報を表示する')
     args = parser.parse_args()
-    
+
     # 設定変更をチェック
     config_changed = check_config_changed()
-    force_crawl = args.force_crawl or config_changed
-    
-    if config_changed:
-        print("フォルダ設定またはアカウント設定の変更を検出しました。")
-        print("ログをクリアして全クロールを実行します。")
+
+    # 1. --reset: ログクリア＋スキップリスト再構築のみ
+    if args.reset:
         clear_logs_and_update_config()
-    
-    # OneDriveファイルリストを一度だけ取得（全モードで共有）
-    onedrive_files = None
-    
-    if args.clear_and_rebuild:
-        print("=== スキップリストクリア・再構築モード ===")
-        # スキップリストファイルを削除
-        skip_list_path = config["skip_list_path"]
-        if os.path.exists(skip_list_path):
-            os.remove(skip_list_path)
-            print(f"スキップリスト削除: {skip_list_path}")
-        
-        # OneDriveクロール（1回のみ）
-        onedrive_files = get_onedrive_files(force_crawl=True)  # クリア・再構築は常に強制クロール
-        
-        # 再構築
-        remaining_files = rebuild_skip_list(onedrive_files, force_crawl=True)
-        print(f"\n転送待ちファイル: {remaining_files}件")
-        
-    elif args.rebuild_skip:
-        print("=== スキップリスト再構築モード ===")
-        # OneDriveクロール（1回のみ）
-        onedrive_files = get_onedrive_files(force_crawl)
-        
-        remaining_files = rebuild_skip_list(onedrive_files, force_crawl)
-        print(f"\n転送待ちファイル: {remaining_files}件")
-        
-    else:
-        print("=== 通常転送モード ===")
-        # OneDriveクロール（1回のみ）
-        onedrive_files = get_onedrive_files(force_crawl)
-        
+        onedrive_files = get_onedrive_files(force_crawl=True)
+        rebuild_skip_list(onedrive_files, force_crawl=True, verbose=args.verbose)
+        print("リセット＆スキップリスト再構築のみ実行しました。")
+        return
+
+    # 2. --full-rebuild または設定変更検知時: ログクリア＋スキップリスト再構築＋転送
+    if args.full_rebuild or config_changed:
+        clear_logs_and_update_config()
+        onedrive_files = get_onedrive_files(force_crawl=True)
+        rebuild_skip_list(onedrive_files, force_crawl=True, verbose=args.verbose)
+        print("フルリビルド（転送も実行）")
         run_transfer(onedrive_files)
+        return
+
+    # 3. デフォルト（通常転送）
+    onedrive_files = get_onedrive_files()
+    # スキップリストが存在しない場合は自動再構築
+    skip_list_path = config.get("skip_list_path", "logs/skip_list.json")
+    if not os.path.exists(skip_list_path):
+        print("スキップリストが存在しないため自動再構築します。")
+        rebuild_skip_list(onedrive_files, force_crawl=False, verbose=args.verbose)
+    run_transfer(onedrive_files)
 
 if __name__ == "__main__":
     main()

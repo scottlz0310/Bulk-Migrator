@@ -145,7 +145,9 @@ def build_skiplist_from_sharepoint(root_folder: Optional[str] = None, skip_list_
     config = load_config()
     
     if root_folder is None:
-        root_folder = config.get('sharepoint_root', 'TEST-Sharepoint')
+        # .envのDESTINATION_SHAREPOINT_DOCLIBを参照
+        import os
+        root_folder = os.getenv('DESTINATION_SHAREPOINT_DOCLIB', 'TEST-Sharepoint')
     
     if skip_list_path is None:
         skip_list_path = config.get('skip_list_path', 'logs/skip_list.json')
