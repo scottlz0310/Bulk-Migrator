@@ -30,6 +30,7 @@ from transfer import GraphTransferClient
 from skiplist import load_skip_list, is_skipped, add_to_skip_list
 from logger import log_transfer_start, log_transfer_success, log_transfer_error, log_transfer_skip
 from rebuild_skip_list import crawl_sharepoint, create_skip_list_from_sharepoint
+from config_manager import get_config, get_onedrive_files_path, get_sharepoint_current_files_path, get_skip_list_path
 
 # 設定読み込み
 with open('config/config.json', encoding='utf-8') as f:
@@ -72,10 +73,10 @@ def clear_logs_and_update_config():
     
     # ログファイルを削除
     log_files = [
-        'logs/onedrive_files.json',
-        'logs/sharepoint_current_files.json', 
-        'logs/skip_list.json',
-        'logs/transfer.log'
+        get_onedrive_files_path(),
+        get_sharepoint_current_files_path(), 
+        get_skip_list_path(),
+        get_config("transfer_log_path", "logs/transfer_start_success_error.log")
     ]
     
     for log_file in log_files:
@@ -93,7 +94,7 @@ def clear_logs_and_update_config():
 def get_onedrive_files(force_crawl=False):
     """OneDriveファイルリストを取得（キャッシュ機能付き）"""
     # キャッシュファイルの存在確認
-    cache_file = 'logs/onedrive_files.json'
+    cache_file = get_onedrive_files_path()
     
     if not force_crawl and os.path.exists(cache_file):
         try:
@@ -129,7 +130,7 @@ def get_onedrive_files(force_crawl=False):
     print("=== OneDriveファイルリスト取得（新規クロール）===")
     
     # 環境変数からフォルダパスを取得
-    source_folder = os.getenv('SOURCE_ONEDRIVE_FOLDER_PATH', 'TEST-Onedrive')
+    source_folder = os.getenv('SOURCE_ONEDRIVE_FOLDER_PATH', get_config('source_onedrive_user', 'TEST-Onedrive'))
     
     file_targets = client.collect_file_targets_from_onedrive(
         folder_path=source_folder,
@@ -158,7 +159,7 @@ def rebuild_skip_list(onedrive_files=None, force_crawl=False, verbose=False):
         sharepoint_files = retry_with_backoff(crawl_sharepoint)
     else:
         # SharePointキャッシュの確認
-        sharepoint_cache_file = 'logs/sharepoint_current_files.json'
+        sharepoint_cache_file = get_sharepoint_current_files_path()
         if os.path.exists(sharepoint_cache_file):
             try:
                 with open(sharepoint_cache_file, 'r', encoding='utf-8') as f:
@@ -187,8 +188,8 @@ def rebuild_skip_list(onedrive_files=None, force_crawl=False, verbose=False):
 def transfer_file(file_info, client, retry_count, timeout):
     """ファイル転送処理"""
     # 環境変数からフォルダパスを取得
-    src_root = os.getenv('SOURCE_ONEDRIVE_FOLDER_PATH', 'TEST-Onedrive')
-    dst_root = os.getenv('DESTINATION_SHAREPOINT_DOCLIB', 'TEST-Sharepoint')
+    src_root = os.getenv('SOURCE_ONEDRIVE_FOLDER_PATH', get_config('source_onedrive_user', 'TEST-Onedrive'))
+    dst_root = os.getenv('DESTINATION_SHAREPOINT_DOCLIB', get_config('destination_sharepoint_doclib', 'TEST-Sharepoint'))
     
     for attempt in range(1, retry_count + 1):
         try:
@@ -202,7 +203,7 @@ def transfer_file(file_info, client, retry_count, timeout):
             )
             elapsed = time.time() - start
             log_transfer_success(file_info, elapsed=elapsed)
-            add_to_skip_list(file_info, config["skip_list_path"])
+            add_to_skip_list(file_info, get_skip_list_path())
             return True
         except Exception as e:
             log_transfer_error(file_info, str(e), retry_count=attempt)
@@ -242,13 +243,13 @@ def run_transfer(onedrive_files=None):
         onedrive_files = get_onedrive_files()
 
     # スキップリスト適用
-    skip_list = load_skip_list(config["skip_list_path"])
+    skip_list = load_skip_list(get_skip_list_path())
     targets = [f for f in onedrive_files if not is_skipped(f, skip_list)]
 
     # 並列転送
-    max_workers = config.get("max_parallel_transfers", 4)
-    retry_count = config.get("retry_count", 3)
-    timeout = config.get("timeout_sec", 10)
+    max_workers = get_config("max_parallel_transfers", 4)
+    retry_count = get_config("retry_count", 3)
+    timeout = get_config("timeout_sec", 10)
 
     print(f"転送対象: {len(targets)} 件 (スキップ済み除外)")
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -293,7 +294,7 @@ def main():
     # 3. デフォルト（通常転送）
     onedrive_files = get_onedrive_files()
     # スキップリストが存在しない場合は自動再構築
-    skip_list_path = config.get("skip_list_path", "logs/skip_list.json")
+    skip_list_path = get_skip_list_path()
     if not os.path.exists(skip_list_path):
         print("スキップリストが存在しないため自動再構築します。")
         rebuild_skip_list(onedrive_files, force_crawl=False, verbose=args.verbose)

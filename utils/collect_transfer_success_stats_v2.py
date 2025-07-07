@@ -15,8 +15,20 @@
 import json
 import re
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
+
+# src/の設定管理を使用
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
+try:
+    from config_manager import get_transfer_log_path, get_sharepoint_current_files_path
+except ImportError:
+    # フォールバック
+    def get_transfer_log_path():
+        return 'logs/transfer_start_success_error.log'
+    def get_sharepoint_current_files_path():
+        return 'logs/sharepoint_current_files.json'
 def normalize_path(path, root):
     """
     指定したroot部分をパスから除去し、先頭の/を除いた相対パスに正規化
@@ -46,14 +58,14 @@ def main():
     onedrive_root = os.getenv('SOURCE_ONEDRIVE_FOLDER_PATH', '')
     sharepoint_root = os.getenv('DESTINATION_SHAREPOINT_DOCLIB', '')
 
-    sharepoint_path = Path('logs/sharepoint_current_files.json')
-    transfer_log_path = Path('logs/transfer_start_success_error.log')
+    sharepoint_path = Path(get_sharepoint_current_files_path())
+    transfer_log_path = Path(get_transfer_log_path())
 
     if not sharepoint_path.exists():
-        print('logs/sharepoint_current_files.json が見つかりません')
+        print(f'{sharepoint_path} が見つかりません')
         return
     if not transfer_log_path.exists():
-        print('logs/transfer_start_success_error.log が見つかりません')
+        print(f'{transfer_log_path} が見つかりません')
         return
 
     sharepoint = load_json(sharepoint_path)

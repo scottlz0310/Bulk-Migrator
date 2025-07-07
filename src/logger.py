@@ -2,8 +2,18 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-LOG_PATH = os.environ.get('TRANSFER_LOG_PATH', 'logs/transfer.log')
-LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+# 設定値管理を使用
+try:
+    from src.config_manager import get_transfer_log_path, get_config
+    LOG_PATH = get_transfer_log_path()
+    LOG_LEVEL = get_config("log_level", "INFO", "LOG_LEVEL")
+except ImportError:
+    # フォールバック（直接実行時など）
+    from dotenv import load_dotenv
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+    load_dotenv(env_path, override=False)
+    LOG_PATH = os.environ.get('TRANSFER_LOG_PATH', 'logs/transfer_start_success_error.log')
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
 
 # ロガー初期化
 logger = logging.getLogger('bulk_migrator')

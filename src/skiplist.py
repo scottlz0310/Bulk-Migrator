@@ -3,7 +3,14 @@ import os
 from typing import List, Dict, Any
 from src.filelock import FileLock
 
-SKIP_LIST_PATH = os.path.join('logs', 'skip_list.json')
+# 設定値管理を使用
+try:
+    from src.config_manager import get_skip_list_path
+    SKIP_LIST_PATH = get_skip_list_path()
+except ImportError:
+    # フォールバック（直接実行時など）
+    SKIP_LIST_PATH = os.path.join('logs', 'skip_list.json')
+
 LOCK_PATH = SKIP_LIST_PATH + '.lock'
 
 def load_skip_list(path: str = SKIP_LIST_PATH) -> List[Dict[str, Any]]:

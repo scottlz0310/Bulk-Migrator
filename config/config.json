@@ -1,13 +1,13 @@
 {
   "log_level": "INFO",
-  "chunk_size_mb": 10,
+  "chunk_size_mb": 5,
+  "large_file_threshold_mb": 4,
   "max_parallel_transfers": 4,
   "retry_count": 3,
   "timeout_sec": 10,
-  "transfer_log_path": "logs/transfer.log",
+  "transfer_log_path": "logs/transfer_start_success_error.log",
   "skip_list_path": "logs/skip_list.json",
   "checksum_report_path": "logs/checksum_report.json",
-  "source_onedrive_user": "",
-  "destination_sharepoint_site": "",
-  "destination_sharepoint_doclib": ""
+  "onedrive_files_path": "logs/onedrive_files.json",
+  "sharepoint_current_files_path": "logs/sharepoint_current_files.json"
 }

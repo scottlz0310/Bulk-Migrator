@@ -20,4 +20,9 @@ source venv/bin/activate
 python -m src.main
 ```
 
+## 大容量ファイル対応
+- 4MB以上のファイルは自動的にアップロードセッション（分割アップロード）を使用
+- チャンクサイズは `config/config.json` で設定可能（デフォルト: 5MB）
+- 従来の単純PUTでは転送できなかった数百MB～GBクラスのファイルも安全に転送
+
 ## 詳細は `Bulk-Migration-PLOT.txt` を参照

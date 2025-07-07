@@ -11,14 +11,32 @@
 import re
 import json
 from pathlib import Path
+import sys
+import os
+
+# src/の設定管理を使用
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
+try:
+    from config_manager import get_transfer_log_path, get_skip_list_path
+except ImportError:
+    def get_transfer_log_path():
+        return 'logs/transfer_start_success_error.log'
+    def get_skip_list_path():
+        return 'logs/skip_list.json'
 
 def load_skiplist(path):
     with open(path, encoding='utf-8') as f:
         return set((f['path'], f.get('id')) for f in json.load(f))
 
 def main():
-    log_path = Path('logs/transfer.log')
-    skiplist_path = Path('logs/skip_list.json')
+    log_path = Path(get_transfer_log_path())
+    skiplist_path = Path(get_skip_list_path())
+    if not log_path.exists():
+        print(f"{log_path} が見つかりません")
+        return
+    if not skiplist_path.exists():
+        print(f"{skiplist_path} が見つかりません")
+        return
     skiplist = load_skiplist(skiplist_path)
     
     success_files = set()

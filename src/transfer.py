@@ -5,10 +5,22 @@ from dotenv import load_dotenv
 import requests
 from src.auth import GraphAuthenticator
 from typing import List, Dict, Any, Optional
+import io
+import math
 
 # プロジェクトルートの.envを必ず読み込む（OS環境変数優先、なければ.env）
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 load_dotenv(env_path, override=False)
+
+
+# 絶対インポートに修正
+try:
+    from src.config_manager import get_chunk_size_mb, get_large_file_threshold_mb
+except ImportError:
+    def get_chunk_size_mb():
+        return 5
+    def get_large_file_threshold_mb():
+        return 4
 
 # OneDrive/SharePoint ディレクトリ再帰取得・転送ロジック雛形
 
@@ -16,9 +28,23 @@ class GraphTransferClient:
 
     def upload_file_to_sharepoint(self, file_info, src_root="TEST-Onedrive", dst_root="TEST-Sharepoint", timeout=10):
         """
-        OneDriveからSharePointへファイルをストリーミング転送する（PUTリクエスト）
-        src_root: OneDrive側のルートパス
-        dst_root: SharePoint側のルートパス
+        OneDriveからSharePointへファイルをストリーミング転送する
+        ファイルサイズに応じて単純PUT or アップロードセッションを選択
+        """
+        file_size = file_info.get('size', 0)
+        threshold_mb = get_large_file_threshold_mb()
+        threshold_bytes = threshold_mb * 1024 * 1024
+        
+        if file_size >= threshold_bytes:
+            print(f"[INFO] 大容量ファイル検出({file_size} bytes) - アップロードセッション使用")
+            return self._upload_large_file_to_sharepoint(file_info, src_root, dst_root, timeout)
+        else:
+            print(f"[INFO] 小容量ファイル({file_size} bytes) - 単純PUT使用")
+            return self._upload_small_file_to_sharepoint(file_info, src_root, dst_root, timeout)
+
+    def _upload_small_file_to_sharepoint(self, file_info, src_root="TEST-Onedrive", dst_root="TEST-Sharepoint", timeout=10):
+        """
+        小容量ファイル用の従来の単純PUTアップロード
         """
         # OneDriveからファイルをダウンロード
         src_path = file_info['path']  # src_pathを最初に定義
@@ -72,10 +98,17 @@ class GraphTransferClient:
         put_resp = requests.put(upload_url, headers=self._headers(), data=resp.raw, timeout=timeout)
         put_resp.raise_for_status()
         return put_resp.json()
-    def filter_skipped_targets(self, file_targets: list, skip_list_path: str = 'logs/skip_list.json') -> list:
+    def filter_skipped_targets(self, file_targets: list, skip_list_path: Optional[str] = None) -> list:
         """
         スキップリストに該当するファイルを除外したリストを返す
         """
+        if skip_list_path is None:
+            try:
+                from src.config_manager import get_skip_list_path
+                skip_list_path = get_skip_list_path()
+            except ImportError:
+                skip_list_path = 'logs/skip_list.json'
+        
         skip_list = load_skip_list(skip_list_path)
         return [f for f in file_targets if not is_skipped(f, skip_list)]
     def save_file_targets(self, file_targets: list, save_path: str) -> None:
@@ -101,7 +134,7 @@ class GraphTransferClient:
         file_targets = []
         seen = set()
         
-        for item in items:
+        for i, item in enumerate(items):
             if 'file' in item:
                 file_key = (item['full_path'], item.get('id'))
                 if file_key not in seen:
@@ -114,6 +147,11 @@ class GraphTransferClient:
                         'id': item.get('id'),
                     })
                     
+                    # 1000件ごとに進捗ログを出力
+                    if len(file_targets) % 1000 == 0:
+                        from src.logger import logger
+                        logger.info(f"OneDriveクロール進捗: {len(file_targets)}ファイル処理済み")
+                        
         print(f"[INFO] OneDriveクロール完了: {len(file_targets)}ファイル")
         return file_targets
 
@@ -262,3 +300,116 @@ class GraphTransferClient:
             except Exception as e:
                 print(f"[WARNING] フォルダ確認/作成エラー: {current_path} - {e}")
                 # エラーが発生しても処理を続行
+
+    def _upload_large_file_to_sharepoint(self, file_info, src_root="TEST-Onedrive", dst_root="TEST-Sharepoint", timeout=10):
+        """
+        大容量ファイル用のアップロードセッション + 分割アップロード
+        """
+        src_path = file_info['path']
+        file_size = file_info.get('size', 0)
+        
+        # SharePoint側のアップロード先パスを生成
+        rel_path = os.path.relpath(src_path, src_root)
+        dst_path = os.path.join(dst_root, rel_path).replace("\\", "/")
+        
+        # ディレクトリ部分を抽出してフォルダを事前作成
+        dst_dir = os.path.dirname(dst_path)
+        if dst_dir and dst_dir != dst_root:
+            self.ensure_sharepoint_folder(dst_dir)
+        
+        # 1. アップロードセッションを作成
+        upload_session = self._create_upload_session(dst_path, file_size)
+        upload_url = upload_session['uploadUrl']
+        
+        # 2. OneDriveからファイルをダウンロード（ストリーム）
+        download_stream = self._get_onedrive_file_stream(file_info, timeout)
+        
+        # 3. チャンク分割アップロード
+        chunk_size = get_chunk_size_mb() * 1024 * 1024  # MBをバイトに変換
+        total_chunks = math.ceil(file_size / chunk_size)
+        
+        for chunk_index in range(total_chunks):
+            start_byte = chunk_index * chunk_size
+            end_byte = min(start_byte + chunk_size - 1, file_size - 1)
+            chunk_data = download_stream.read(chunk_size)
+            
+            if not chunk_data:
+                break
+                
+            print(f"[INFO] チャンク {chunk_index + 1}/{total_chunks} アップロード中 ({start_byte}-{end_byte})")
+            
+            # チャンクをアップロード
+            self._upload_chunk(upload_url, chunk_data, start_byte, end_byte, file_size, timeout)
+        
+        print(f"[INFO] アップロード完了: {dst_path}")
+        return {"message": "Upload completed via upload session"}
+    
+    def _create_upload_session(self, dst_path: str, file_size: int) -> Dict[str, Any]:
+        """
+        SharePointアップロードセッションを作成
+        """
+        session_url = f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}/root:/{dst_path}:/createUploadSession"
+        
+        payload = {
+            "item": {
+                "@microsoft.graph.conflictBehavior": "replace",
+                "name": os.path.basename(dst_path)
+            }
+        }
+        
+        response = requests.post(session_url, headers=self._headers(), json=payload)
+        response.raise_for_status()
+        return response.json()
+    
+    def _get_onedrive_file_stream(self, file_info, timeout=10):
+        """
+        OneDriveからファイルのダウンロードストリームを取得
+        """
+        # OneDriveファイルIDを使った直接アクセス方式
+        onedrive_drive_id = os.getenv('SOURCE_ONEDRIVE_DRIVE_ID')
+        file_id = file_info.get('id')
+        
+        if onedrive_drive_id and file_id:
+            # ファイルIDを使って直接ダウンロードURL取得
+            file_url = f"{self.base_url}/drives/{onedrive_drive_id}/items/{file_id}"
+            file_resp = requests.get(file_url, headers=self._headers())
+            
+            if file_resp.status_code == 200:
+                file_data = file_resp.json()
+                download_url = file_data.get('@microsoft.graph.downloadUrl')
+                
+                if download_url:
+                    resp = requests.get(download_url, stream=True, timeout=timeout)
+                    resp.raise_for_status()
+                    return resp.raw
+                else:
+                    raise Exception(f"ダウンロードURLが取得できませんでした: {file_info['name']}")
+            else:
+                raise Exception(f"ファイル情報の取得に失敗しました: {file_resp.status_code} - {file_resp.text}")
+        else:
+            # フォールバック: 従来のパスベース方式
+            src_path = file_info['path']
+            import urllib.parse
+            encoded_path = '/'.join([urllib.parse.quote(part) for part in src_path.split('/')])
+            
+            if onedrive_drive_id:
+                download_url = f"{self.base_url}/drives/{onedrive_drive_id}/root:/{encoded_path}:/content"
+            else:
+                download_url = f"{self.base_url}/users/{os.getenv('SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME')}/drive/root:/{encoded_path}:/content"
+            
+            resp = requests.get(download_url, headers=self._headers(), stream=True, timeout=timeout)
+            resp.raise_for_status()
+            return resp.raw
+    
+    def _upload_chunk(self, upload_url: str, chunk_data: bytes, start_byte: int, end_byte: int, total_size: int, timeout=10):
+        """
+        チャンクデータをアップロードセッションURLにアップロード
+        """
+        headers = {
+            'Content-Range': f'bytes {start_byte}-{end_byte}/{total_size}',
+            'Content-Length': str(len(chunk_data))
+        }
+        
+        response = requests.put(upload_url, headers=headers, data=chunk_data, timeout=timeout)
+        response.raise_for_status()
+        return response

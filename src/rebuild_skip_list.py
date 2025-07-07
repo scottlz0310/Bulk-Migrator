@@ -33,7 +33,7 @@ def crawl_sharepoint():
     
     # ファイル情報を整理してフルパスを生成
     sharepoint_file_list = []
-    for item in sharepoint_files:
+    for i, item in enumerate(sharepoint_files):
         # SharePoint側のパス情報を再構築
         file_path = item.get('parentReference', {}).get('path', '')
         
@@ -53,10 +53,21 @@ def crawl_sharepoint():
             'lastModifiedDateTime': item.get('lastModifiedDateTime'),
             'id': item.get('id'),
         })
+        
+        # 1000件ごとに進捗ログを出力
+        if len(sharepoint_file_list) % 1000 == 0:
+            from src.logger import logger
+            logger.info(f"SharePointクロール進捗: {len(sharepoint_file_list)}ファイル処理済み")
     
     # SharePointファイルリストを保存
     os.makedirs('logs', exist_ok=True)
-    with open('logs/sharepoint_current_files.json', 'w', encoding='utf-8') as f:
+    try:
+        from src.config_manager import get_sharepoint_current_files_path
+        sharepoint_files_path = get_sharepoint_current_files_path()
+    except ImportError:
+        sharepoint_files_path = 'logs/sharepoint_current_files.json'
+    
+    with open(sharepoint_files_path, 'w', encoding='utf-8') as f:
         json.dump(sharepoint_file_list, f, ensure_ascii=False, indent=2)
     
     print(f"SharePointクロール完了: {len(sharepoint_file_list)}ファイル")
@@ -84,7 +95,13 @@ def crawl_onedrive():
     )
     
     # OneDriveファイルリストを保存
-    with open('logs/onedrive_files.json', 'w', encoding='utf-8') as f:
+    try:
+        from src.config_manager import get_onedrive_files_path
+        onedrive_files_path = get_onedrive_files_path()
+    except ImportError:
+        onedrive_files_path = 'logs/onedrive_files.json'
+    
+    with open(onedrive_files_path, 'w', encoding='utf-8') as f:
         json.dump(file_targets, f, ensure_ascii=False, indent=2)
     
     print(f"OneDriveクロール完了: {len(file_targets)}ファイル")
@@ -118,7 +135,14 @@ def create_skip_list_from_sharepoint(onedrive_files, sharepoint_files):
             print(f"マッチ: {od_file['path']}")
     
     # スキップリストを保存
-    with open('logs/skip_list.json', 'w', encoding='utf-8') as f:
+    # スキップリストを保存
+    try:
+        from src.config_manager import get_skip_list_path
+        skip_list_path = get_skip_list_path()
+    except ImportError:
+        skip_list_path = 'logs/skip_list.json'
+    
+    with open(skip_list_path, 'w', encoding='utf-8') as f:
         json.dump(skip_list, f, ensure_ascii=False, indent=2)
     
     print(f"スキップリスト構築完了: {matched_count}/{len(onedrive_files)}ファイルが転送済み")
