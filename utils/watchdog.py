@@ -104,31 +104,35 @@ def main():
                 # 監視ループ
                 while True:
                     time.sleep(CHECK_INTERVAL_SEC)
-                    
+
                     # プロセスが自然終了していないかチェック
                     if proc.poll() is not None:
                         elapsed = format_time_diff(time.time() - start_time)
                         log_watchdog(f"src.mainが自然終了しました (稼働時間: {elapsed}, 終了コード: {proc.returncode})")
+                        # 正常終了（終了コード0）ならwatchdogも終了
+                        if proc.returncode == 0:
+                            log_watchdog("=== 監視終了（src.main正常終了） ===")
+                            return
                         break
-                    
+
                     # ログファイルの更新チェック
                     current_mtime = get_log_mtime()
                     current_time = time.time()
-                    
+
                     if current_mtime > last_mtime:
                         # ログが更新された
                         last_mtime = current_mtime
                         last_check_time = current_time
                         continue
-                    
+
                     # タイムアウトチェック
                     idle_time = current_time - last_check_time
                     if idle_time > (TIMEOUT_MINUTES * 60):
                         elapsed = format_time_diff(time.time() - start_time)
                         idle_formatted = format_time_diff(idle_time)
-                        
+
                         log_watchdog(f"!!! フリーズ検出 !!! (稼働時間: {elapsed}, 無応答時間: {idle_formatted})")
-                        
+
                         # 直前のログを記録
                         tail_lines = get_tail_lines(MAIN_LOG_PATH, TAIL_LINES)
                         if tail_lines:
@@ -136,11 +140,11 @@ def main():
                             for line in tail_lines:
                                 log_watchdog(f"  {line.rstrip()}")
                             log_watchdog("=== 直前のログ終了 ===")
-                        
+
                         # プロセス強制終了
                         log_watchdog(f"src.main強制終了中... (PID: {proc.pid})")
                         proc.terminate()
-                        
+
                         try:
                             proc.wait(timeout=10)
                             log_watchdog("src.main正常終了")
@@ -149,16 +153,16 @@ def main():
                             proc.kill()
                             proc.wait()
                             log_watchdog("src.mainをKILLしました")
-                        
+
                         restart_count += 1
                         log_watchdog(f"自動再起動準備中... (累計再起動回数: {restart_count})")
                         break
-            
+
             # 短時間での連続再起動を防ぐ
             if time.time() - start_time < 60:
                 log_watchdog("短時間終了検出、5秒待機してから再起動")
                 time.sleep(5)
-    
+
     except KeyboardInterrupt:
         log_watchdog("監視停止要求を受信")
         if 'proc' in locals() and proc.poll() is None:
