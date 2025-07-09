@@ -7,7 +7,7 @@
   - SharePoint現状ファイル数・スキップリスト件数も表示
 【使い方】
   $ python utils/collect_stats.py
-  （logs/transfer_start_success_error.log, logs/sharepoint_current_files.json, logs/skip_list.json を集計）
+  （logs/transfer_start_success_error.log*, logs/sharepoint_current_files.json, logs/skip_list.json を集計）
 """
 import json
 import re
@@ -29,24 +29,31 @@ except ImportError:
         return 'logs/skip_list.json'
 
 def main():
-    log_path = Path(get_transfer_log_path())
+    import glob
+    log_pattern = get_transfer_log_path() + '*'
+    log_files = glob.glob(log_pattern)
     sharepoint_path = Path(get_sharepoint_current_files_path())
     skiplist_path = Path(get_skip_list_path())
 
-    # 転送ログ
-    if log_path.exists():
-        with open(log_path, encoding='utf-8') as f:
-            lines = f.readlines()
-        success = sum(1 for l in lines if 'SUCCESS:' in l)
-        error = sum(1 for l in lines if 'ERROR:' in l)
-        total = success + error
-        print(f"SUCCESS: {success}")
-        print(f"ERROR: {error}")
-        print(f"合計: {total}")
-        if total:
-            print(f"成功率: {success/total*100:.2f}%")
+    # 転送ログ（複数ファイル対応）
+    total_success = 0
+    total_error = 0
+    if log_files:
+        for log_file in log_files:
+            with open(log_file, encoding='utf-8') as f:
+                lines = f.readlines()
+            success = sum(1 for l in lines if 'SUCCESS:' in l)
+            error = sum(1 for l in lines if 'ERROR:' in l)
+            total = success + error
+            rate = (success / total * 100) if total else 0
+            print(f"{log_file}: SUCCESS={success}, ERROR={error}, 合計={total}, 成功率={rate:.2f}%")
+            total_success += success
+            total_error += error
+        grand_total = total_success + total_error
+        grand_rate = (total_success / grand_total * 100) if grand_total else 0
+        print(f"Total SUCCESS: {total_success}, ERROR: {total_error}, 合計: {grand_total}, 成功率: {grand_rate:.2f}%")
     else:
-        print(f"{log_path} が見つかりません (SUCCESS/ERROR/合計/成功率: 0)")
+        print(f"{log_pattern} が見つかりません (SUCCESS/ERROR/合計/成功率: 0)")
 
     # SharePoint現状
     if sharepoint_path.exists():
