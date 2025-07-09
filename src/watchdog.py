@@ -30,6 +30,7 @@ import time
 import os
 import signal
 import sys
+import json
 from datetime import datetime
 from pathlib import Path
 
@@ -78,6 +79,26 @@ def format_time_diff(seconds):
         minutes = int((seconds % 3600) / 60)
         return f"{hours}時間{minutes}分"
 
+def is_transfer_remaining():
+    """転送対象が残っているか判定（OneDrive総件数 > スキップリスト件数）"""
+    try:
+        # OneDriveファイル数
+        with open("logs/onedrive_files.json", encoding="utf-8") as f:
+            onedrive_count = len(json.load(f))
+        
+        # スキップリスト件数
+        with open("logs/skip_list.json", encoding="utf-8") as f:
+            skiplist_count = len(json.load(f))
+        
+        remaining = onedrive_count - skiplist_count
+        log_watchdog(f"転送残判定: OneDrive={onedrive_count:,}件, スキップリスト={skiplist_count:,}件, 残り={remaining:,}件")
+        
+        return remaining > 0
+    except Exception as e:
+        log_watchdog(f"転送残判定エラー: {e} (念のため継続)")
+        # エラー時は念のため転送継続
+        return True
+
 def main():
     """メイン監視ループ"""
     log_watchdog("=== 監視開始 ===")
@@ -112,10 +133,14 @@ def main():
                     if proc.poll() is not None:
                         elapsed = format_time_diff(time.time() - start_time)
                         log_watchdog(f"src.mainが自然終了しました (稼働時間: {elapsed}, 終了コード: {proc.returncode})")
-                        # 正常終了（終了コード0）ならwatchdogも終了
                         if proc.returncode == 0:
-                            log_watchdog("=== 監視終了（src.main正常終了） ===")
-                            return
+                            # 転送対象が残っているかチェック
+                            if is_transfer_remaining():
+                                log_watchdog("転送対象が残っているため、src.mainを再起動します")
+                                break  # ループを抜けて再起動
+                            else:
+                                log_watchdog("=== 監視終了（全転送完了） ===")
+                                return
                         break
 
                     # ログファイルの更新チェック
