@@ -42,6 +42,10 @@
    ```bash
    pip install -r requirements.txt
    ```
+5. テストの実行（推奨）
+   ```bash
+   python run_tests.py
+   ```
 5. `.env` にMicrosoft Graph API認証情報・転送元/先情報を記載※SETUPGUIDE.md参照
 6. 必要に応じて `config/config.json` で詳細設定
 7. キャッシュ情報の消去と再構築※キャッシュ情報やログをを初期化したくなったとき以外はこの項をスキップして通常運用を実行して良い。初回起動を含め設定変更を認識したときやキャッシュが存在しないときは自動でクロールを開始するが、明示的に再構築をしたいときは推奨

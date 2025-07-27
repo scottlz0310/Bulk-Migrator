@@ -7,3 +7,12 @@ __pycache__/
 venv/
 .venv/
 idea/
+
+# テスト関連
+htmlcov/
+.coverage
+.pytest_cache/
+.tox/
+.cache/
+*.cover
+.hypothesis/
