@@ -16,3 +16,25 @@ htmlcov/
 .cache/
 *.cover
 .hypothesis/
+
+# Added by add-autogen-gitignore.ps1 on 2025-09-03T15:56:24.2709987+09:00
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+.env
+.env.*
+.vscode.bak.*
+uv.lock
+.DS_Store
+Thumbs.db
+*.log
+.mypy_cache/
+*.sqlite3
+*.db
+node_modules/
+requirements.txt
