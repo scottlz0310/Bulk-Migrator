@@ -38,3 +38,11 @@ Thumbs.db
 *.db
 node_modules/
 requirements.txt
+
+# Auto-generated entries
+.ruff_cache/
+
+# Auto-generated entries
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
