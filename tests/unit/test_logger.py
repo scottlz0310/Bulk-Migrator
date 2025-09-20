@@ -228,6 +228,11 @@ class TestSecureLogger:
             log_path = os.path.join(temp_dir, "test.log")
             secure_logger = SecureLogger("test_logger", log_path)
             try:
+                # 実際のハンドラを先に閉じる（Windows対応）
+                for handler in secure_logger.logger.handlers[:]:
+                    handler.close()
+                    secure_logger.logger.removeHandler(handler)
+                
                 # モックロガーを設定
                 secure_logger.logger = MagicMock()
 
@@ -242,6 +247,12 @@ class TestSecureLogger:
                 assert secure_logger.logger.log.call_count == 4
             finally:
                 secure_logger.close()
+                # Windows対応：ファイルハンドルを確実に閉じる
+                if hasattr(secure_logger.logger, 'handlers'):
+                    for handler in secure_logger.logger.handlers[:]:
+                        if hasattr(handler, 'close'):
+                            handler.close()
+                        secure_logger.logger.removeHandler(handler)
 
     def test_log_auth_event(self):
         """認証イベントログテスト"""
@@ -251,6 +262,11 @@ class TestSecureLogger:
             log_path = os.path.join(temp_dir, "test.log")
             secure_logger = SecureLogger("test_logger", log_path)
             try:
+                # 実際のハンドラを先に閉じる（Windows対応）
+                for handler in secure_logger.logger.handlers[:]:
+                    handler.close()
+                    secure_logger.logger.removeHandler(handler)
+                
                 # モックロガーを設定
                 secure_logger.logger = MagicMock()
 
@@ -278,6 +294,12 @@ class TestSecureLogger:
                 assert "test_client_id" in logged_message  # 非機密情報はそのまま
             finally:
                 secure_logger.close()
+                # Windows対応：ファイルハンドルを確実に閉じる
+                if hasattr(secure_logger.logger, 'handlers'):
+                    for handler in secure_logger.logger.handlers[:]:
+                        if hasattr(handler, 'close'):
+                            handler.close()
+                        secure_logger.logger.removeHandler(handler)
 
     def test_log_auth_event_without_details(self):
         """認証イベントログテスト（詳細情報なし）"""
@@ -287,6 +309,11 @@ class TestSecureLogger:
             log_path = os.path.join(temp_dir, "test.log")
             secure_logger = SecureLogger("test_logger", log_path)
             try:
+                # 実際のハンドラを先に閉じる（Windows対応）
+                for handler in secure_logger.logger.handlers[:]:
+                    handler.close()
+                    secure_logger.logger.removeHandler(handler)
+                
                 # モックロガーを設定
                 secure_logger.logger = MagicMock()
 
@@ -296,6 +323,12 @@ class TestSecureLogger:
                 secure_logger.logger.log.assert_called_once()
             finally:
                 secure_logger.close()
+                # Windows対応：ファイルハンドルを確実に閉じる
+                if hasattr(secure_logger.logger, 'handlers'):
+                    for handler in secure_logger.logger.handlers[:]:
+                        if hasattr(handler, 'close'):
+                            handler.close()
+                        secure_logger.logger.removeHandler(handler)
 
     @patch("src.logger.get_config")
     @patch("src.logger.get_transfer_log_path")
