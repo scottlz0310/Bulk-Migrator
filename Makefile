@@ -62,3 +62,29 @@ bandit: ## bandit セキュリティスキャンのみ実行
 
 audit: ## pip-audit 脆弱性チェックのみ実行
 	uv run python scripts/security_scan.py --scan-type=audit
+
+metrics: ## 品質メトリクスを収集・表示
+	uv run python src/quality_metrics.py
+
+metrics-report: ## 品質メトリクスレポートを生成
+	@echo "品質メトリクスレポートを生成中..."
+	uv run python src/quality_metrics.py
+	@echo "品質メトリクスレポートが quality_reports/ に保存されました"
+
+alerts-check: ## 品質アラートをチェック
+	uv run python src/quality_alerts.py --check
+
+monthly-report: ## 月次品質レポートを生成
+	uv run python src/quality_alerts.py --monthly
+
+quarterly-report: ## 四半期品質レポートを生成
+	uv run python src/quality_alerts.py --quarterly
+
+semi-annual-report: ## 半年品質レポートを生成
+	uv run python src/quality_alerts.py --semi-annual
+
+quality-dashboard: ## 品質ダッシュボード（メトリクス収集 + アラートチェック）
+	@echo "品質ダッシュボードを実行中..."
+	uv run python src/quality_metrics.py
+	uv run python src/quality_alerts.py --check
+	@echo "品質ダッシュボードが完了しました"

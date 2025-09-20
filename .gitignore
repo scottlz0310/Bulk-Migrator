@@ -53,6 +53,10 @@ vulnerability-report.json
 bandit-report.json
 sbom.json
 
+# 品質レポート
+quality_reports/
+coverage.json
+
 # Auto-generated entries from templates
 $RECYCLE.BIN/
 *$py.class
