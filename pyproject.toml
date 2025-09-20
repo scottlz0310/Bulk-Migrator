@@ -37,3 +37,21 @@ no_implicit_optional = true
 # disallow_any_generics = true  # staging で有効化予定
 # warn_return_any = true        # staging で有効化予定
 # strict_equality = true        # staging で有効化予定
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = [
+    "--cov=src",
+    "--cov-report=html:htmlcov",
+    "--cov-report=term-missing",
+    "--cov-fail-under=60",
+    "-v"
+]
+markers = [
+    "unit: 単体テスト",
+    "integration: 統合テスト", 
+    "auth: 認証関連テスト",
+    "transfer: ファイル転送テスト",
+    "config: 設定関連テスト"
+]

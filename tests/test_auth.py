@@ -17,6 +17,8 @@ class TestGraphAuthenticator:
     @patch("src.auth.ConfidentialClientApplication")
     def test_init(self, mock_msal):
         """初期化テスト"""
+        # 検証対象: GraphAuthenticator.__init__()
+        # 目的: 認証クライアントが正しく初期化されることを確認
         mock_app = MagicMock()
         mock_msal.return_value = mock_app
 
@@ -30,6 +32,8 @@ class TestGraphAuthenticator:
     @patch("src.auth.ConfidentialClientApplication")
     def test_get_access_token_success(self, mock_msal):
         """トークン取得成功テスト"""
+        # 検証対象: GraphAuthenticator.get_access_token()
+        # 目的: 正常な認証フローでトークンが取得されることを確認
         mock_app = MagicMock()
         mock_app.acquire_token_for_client.return_value = {
             "access_token": "test_token",
@@ -46,6 +50,8 @@ class TestGraphAuthenticator:
     @patch("src.auth.ConfidentialClientApplication")
     def test_get_access_token_failure(self, mock_msal):
         """トークン取得失敗テスト"""
+        # 検証対象: GraphAuthenticator.get_access_token()
+        # 目的: 認証失敗時に適切な例外が発生することを確認
         mock_app = MagicMock()
         mock_app.acquire_token_for_client.return_value = {
             "error": "invalid_client",
@@ -63,6 +69,8 @@ class TestGraphAuthenticator:
     @patch("src.auth.ConfidentialClientApplication")
     def test_get_access_token_no_token(self, mock_msal):
         """トークンが含まれていない場合のテスト"""
+        # 検証対象: GraphAuthenticator.get_access_token()
+        # 目的: レスポンスにaccess_tokenが含まれない場合に例外が発生することを確認
         mock_app = MagicMock()
         mock_app.acquire_token_for_client.return_value = {"expires_in": 3600}
         mock_msal.return_value = mock_app
