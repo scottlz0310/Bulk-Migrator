@@ -25,10 +25,7 @@ cov: ## カバレッジ付きテストを実行
 	uv run pytest --cov=src --cov-report=term-missing
 
 security: ## セキュリティスキャンを実行
-	@echo "セキュリティスキャンを実行中..."
-	uv run bandit -r src/ -f txt || true
-	uv run pip-audit --format=json --output=vulnerability-report.json || true
-	@echo "セキュリティスキャンが完了しました"
+	uv run python scripts/security_scan.py --scan-type=all
 
 build: ## プロジェクトをビルド
 	uv build
@@ -55,5 +52,13 @@ release-check: ## リリース前の最終チェック
 	@echo "リリース前チェックが完了しました"
 
 sbom: ## SBOM (Software Bill of Materials) を生成
-	uv run cyclonedx-py -o sbom.json
-	@echo "SBOM が sbom.json に生成されました"
+	uv run python scripts/security_scan.py --scan-type=sbom
+
+security-strict: ## セキュリティスキャンを実行（問題検出時に失敗）
+	uv run python scripts/security_scan.py --scan-type=all --fail-on-issues
+
+bandit: ## bandit セキュリティスキャンのみ実行
+	uv run python scripts/security_scan.py --scan-type=bandit
+
+audit: ## pip-audit 脆弱性チェックのみ実行
+	uv run python scripts/security_scan.py --scan-type=audit

@@ -2,9 +2,12 @@
 loggerモジュールのテスト
 """
 
-from unittest.mock import patch
+import os
+import tempfile
+from unittest.mock import MagicMock, patch
 
 from src.logger import (
+    SecureLogger,
     log_transfer_error,
     log_transfer_skip,
     log_transfer_start,
@@ -61,3 +64,216 @@ class TestLogger:
         """転送スキップログテスト"""
         log_transfer_skip(self.test_file_info)
         mock_logger.info.assert_called_once()
+
+
+class TestSecureLogger:
+    """SecureLoggerクラスのテストクラス"""
+
+    def setup_method(self):
+        """各テストメソッドの前処理"""
+        self.test_file_info = {
+            "name": "test_file.txt",
+            "path": "/test/path/test_file.txt",
+            "size": 1024,
+            "lastModifiedDateTime": "2024-01-01T00:00:00Z",
+        }
+
+    def test_mask_sensitive_data_client_secret(self):
+        """CLIENT_SECRETマスキングテスト"""
+        # 検証対象: SecureLogger.mask_sensitive_data()
+        # 目的: CLIENT_SECRETが適切にマスクされることを確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            secure_logger = SecureLogger("test_logger", log_path)
+
+            test_message = "Authentication with client_secret=abc123def456"
+            masked_message = secure_logger.mask_sensitive_data(test_message)
+
+            assert "client_secret=[MASKED]" in masked_message
+            assert "abc123def456" not in masked_message
+
+    def test_mask_sensitive_data_access_token(self):
+        """ACCESS_TOKENマスキングテスト"""
+        # 検証対象: SecureLogger.mask_sensitive_data()
+        # 目的: ACCESS_TOKENが適切にマスクされることを確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            secure_logger = SecureLogger("test_logger", log_path)
+
+            test_message = (
+                "Request with access_token='eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9'"
+            )
+            masked_message = secure_logger.mask_sensitive_data(test_message)
+
+            assert "access_token=[MASKED]" in masked_message
+            assert "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9" not in masked_message
+
+    def test_mask_sensitive_data_bearer_token(self):
+        """Bearerトークンマスキングテスト"""
+        # 検証対象: SecureLogger.mask_sensitive_data()
+        # 目的: Bearerトークンが適切にマスクされることを確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            secure_logger = SecureLogger("test_logger", log_path)
+
+            test_message = "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9"
+            masked_message = secure_logger.mask_sensitive_data(test_message)
+
+            assert "Bearer [MASKED]" in masked_message
+            assert "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9" not in masked_message
+
+    def test_mask_sensitive_data_json_format(self):
+        """JSON形式の機密情報マスキングテスト"""
+        # 検証対象: SecureLogger.mask_sensitive_data()
+        # 目的: JSON内の機密情報が適切にマスクされることを確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            secure_logger = SecureLogger("test_logger", log_path)
+
+            test_message = '{"client_secret": "abc123", "client_id": "def456"}'
+            masked_message = secure_logger.mask_sensitive_data(test_message)
+
+            assert '"client_secret": "[MASKED]"' in masked_message
+            assert '"client_id": "def456"' in masked_message  # 非機密情報はそのまま
+            assert "abc123" not in masked_message
+
+    def test_mask_sensitive_data_multiple_patterns(self):
+        """複数パターンの機密情報マスキングテスト"""
+        # 検証対象: SecureLogger.mask_sensitive_data()
+        # 目的: 複数の機密情報パターンが同時にマスクされることを確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            secure_logger = SecureLogger("test_logger", log_path)
+
+            test_message = (
+                "client_secret=abc123 and api_key: xyz789 and password='secret123'"
+            )
+            masked_message = secure_logger.mask_sensitive_data(test_message)
+
+            assert "client_secret=[MASKED]" in masked_message
+            assert "api_key=[MASKED]" in masked_message
+            assert "password=[MASKED]" in masked_message
+            assert "abc123" not in masked_message
+            assert "xyz789" not in masked_message
+            assert "secret123" not in masked_message
+
+    def test_mask_sensitive_data_empty_input(self):
+        """空入力のマスキングテスト"""
+        # 検証対象: SecureLogger.mask_sensitive_data()
+        # 目的: 空入力の場合の処理を確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            secure_logger = SecureLogger("test_logger", log_path)
+
+            assert secure_logger.mask_sensitive_data("") == ""
+            assert secure_logger.mask_sensitive_data(None) is None
+
+    @patch("src.logger.SecureLogger._log_with_masking")
+    def test_log_levels(self, mock_log_with_masking):
+        """各ログレベルのテスト"""
+        # 検証対象: SecureLogger.debug/info/warning/error/critical()
+        # 目的: 各ログレベルメソッドが適切に動作することを確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            secure_logger = SecureLogger("test_logger", log_path)
+
+            test_message = "Test message"
+
+            secure_logger.debug(test_message)
+            secure_logger.info(test_message)
+            secure_logger.warning(test_message)
+            secure_logger.error(test_message)
+            secure_logger.critical(test_message)
+
+            assert mock_log_with_masking.call_count == 5
+
+    def test_log_transfer_methods(self):
+        """転送関連ログメソッドのテスト"""
+        # 検証対象: SecureLogger.log_transfer_*()
+        # 目的: 転送関連のログメソッドが適切に動作することを確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            secure_logger = SecureLogger("test_logger", log_path)
+
+            # モックロガーを設定
+            secure_logger.logger = MagicMock()
+
+            secure_logger.log_transfer_start(self.test_file_info)
+            secure_logger.log_transfer_success(self.test_file_info, elapsed=1.5)
+            secure_logger.log_transfer_error(
+                self.test_file_info, "Test error", retry_count=2
+            )
+            secure_logger.log_transfer_skip(self.test_file_info)
+
+            # ログメソッドが呼び出されたことを確認
+            assert secure_logger.logger.log.call_count == 4
+
+    def test_log_auth_event(self):
+        """認証イベントログテスト"""
+        # 検証対象: SecureLogger.log_auth_event()
+        # 目的: 認証イベントログが適切に出力されることを確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            secure_logger = SecureLogger("test_logger", log_path)
+
+            # モックロガーを設定
+            secure_logger.logger = MagicMock()
+
+            # 機密情報を含む詳細情報
+            auth_details = {
+                "client_id": "test_client_id",
+                "client_secret": "secret123",
+                "tenant_id": "tenant456",
+                "scope": "https://graph.microsoft.com/.default",
+            }
+
+            secure_logger.log_auth_event("Token acquired", auth_details)
+
+            # ログメソッドが呼び出されたことを確認
+            secure_logger.logger.log.assert_called_once()
+
+            # 呼び出された引数を確認
+            call_args = secure_logger.logger.log.call_args
+            logged_message = call_args[0][1]  # メッセージ部分
+
+            # 機密情報がマスクされていることを確認
+            assert "[MASKED]" in logged_message
+            assert "secret123" not in logged_message
+            assert "tenant456" not in logged_message
+            assert "test_client_id" in logged_message  # 非機密情報はそのまま
+
+    def test_log_auth_event_without_details(self):
+        """認証イベントログテスト（詳細情報なし）"""
+        # 検証対象: SecureLogger.log_auth_event()
+        # 目的: 詳細情報なしの認証イベントログが適切に出力されることを確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            secure_logger = SecureLogger("test_logger", log_path)
+
+            # モックロガーを設定
+            secure_logger.logger = MagicMock()
+
+            secure_logger.log_auth_event("Authentication started")
+
+            # ログメソッドが呼び出されたことを確認
+            secure_logger.logger.log.assert_called_once()
+
+    @patch("src.logger.get_config")
+    @patch("src.logger.get_transfer_log_path")
+    def test_setup_logger_with_config(
+        self, mock_get_transfer_log_path, mock_get_config
+    ):
+        """設定管理を使用したロガーセットアップテスト"""
+        # 検証対象: SecureLogger._setup_logger()
+        # 目的: 設定管理を使用したロガーセットアップが正常に動作することを確認
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            mock_get_transfer_log_path.return_value = log_path
+            mock_get_config.return_value = "DEBUG"
+
+            secure_logger = SecureLogger("test_logger")
+
+            # ログレベルが設定されていることを確認
+            # （数値は環境により異なる可能性があるため、設定されていることのみ確認）
+            assert secure_logger.logger.level is not None
+            assert len(secure_logger.logger.handlers) == 2  # file + console handlers

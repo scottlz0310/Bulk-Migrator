@@ -10,6 +10,7 @@
 
 import json
 import os
+import re
 from typing import Any
 
 from dotenv import load_dotenv
@@ -127,3 +128,154 @@ def get_chunk_size_mb() -> int:
 
 def get_large_file_threshold_mb() -> int:
     return get_config("large_file_threshold_mb", 4, "LARGE_FILE_THRESHOLD_MB")
+
+
+class SecureConfigManager(ConfigManager):
+    """セキュリティ強化された設定管理クラス"""
+
+    # 機密情報として扱うキーのパターン
+    SENSITIVE_KEYS = {
+        "CLIENT_SECRET",
+        "TENANT_ID",
+        "ACCESS_TOKEN",
+        "REFRESH_TOKEN",
+        "API_KEY",
+        "PASSWORD",
+        "SECRET",
+        "TOKEN",
+        "KEY",
+    }
+
+    # 機密情報パターン（正規表現）
+    SENSITIVE_PATTERNS = [
+        r'client_secret[=:]\s*["\']?([^"\'\s]+)["\']?',
+        r'access_token[=:]\s*["\']?([^"\'\s]+)["\']?',
+        r'tenant_id[=:]\s*["\']?([^"\'\s]+)["\']?',
+        r'api_key[=:]\s*["\']?([^"\'\s]+)["\']?',
+        r'password[=:]\s*["\']?([^"\'\s]+)["\']?',
+    ]
+
+    def __init__(self):
+        super().__init__()
+
+    def is_sensitive_key(self, key: str) -> bool:
+        """キーが機密情報かどうかを判定"""
+        key_upper = key.upper()
+        return any(sensitive in key_upper for sensitive in self.SENSITIVE_KEYS)
+
+    def mask_value(self, value: Any) -> str | None:
+        """値をマスクする"""
+        if value is None:
+            return None
+
+        value_str = str(value)
+        if len(value_str) <= 4:
+            return "***"
+        elif len(value_str) <= 8:
+            return value_str[:2] + "***"
+        else:
+            return value_str[:3] + "***" + value_str[-2:]
+
+    def get_masked_config(self) -> dict[str, Any]:
+        """機密情報をマスクした設定を返す"""
+        config = {}
+
+        # 環境変数から取得
+        for key, value in os.environ.items():
+            if self.is_sensitive_key(key):
+                config[key] = self.mask_value(value)
+            else:
+                config[key] = value
+
+        # config.jsonから取得
+        if self._config_cache:
+            for key, value in self._config_cache.items():
+                if self.is_sensitive_key(key):
+                    config[key] = self.mask_value(value)
+                else:
+                    config[key] = value
+
+        return config
+
+    def get_all_config(self) -> dict[str, Any]:
+        """全設定を取得（機密情報含む）- 内部使用のみ"""
+        config = {}
+
+        # 環境変数から取得
+        for key, value in os.environ.items():
+            config[key] = value
+
+        # config.jsonから取得
+        if self._config_cache:
+            for key, value in self._config_cache.items():
+                config[key] = value
+
+        return config
+
+    def mask_sensitive_data(self, text: str) -> str:
+        """テキスト内の機密情報をマスクする"""
+        if not text:
+            return text
+
+        masked_text = text
+        for pattern in self.SENSITIVE_PATTERNS:
+            masked_text = re.sub(
+                pattern,
+                lambda m: f"{m.group(0).split('=')[0]}=[MASKED]"
+                if "=" in m.group(0)
+                else f"{m.group(0).split(':')[0]}:[MASKED]",
+                masked_text,
+                flags=re.IGNORECASE,
+            )
+
+        return masked_text
+
+    def validate_env_file_security(self) -> dict[str, Any]:
+        """環境ファイルのセキュリティ設定を検証"""
+        results: dict[str, Any] = {
+            "env_in_gitignore": False,
+            "sample_env_exists": False,
+            "sensitive_keys_found": [],
+            "recommendations": [],
+        }
+
+        # .gitignoreの確認
+        gitignore_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), ".gitignore"
+        )
+        if os.path.exists(gitignore_path):
+            with open(gitignore_path, encoding="utf-8") as f:
+                gitignore_content = f.read()
+                if ".env" in gitignore_content:
+                    results["env_in_gitignore"] = True
+
+        # sample.envの確認
+        sample_env_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "sample.env"
+        )
+        results["sample_env_exists"] = os.path.exists(sample_env_path)
+
+        # 機密情報キーの確認
+        for key in os.environ.keys():
+            if self.is_sensitive_key(key):
+                results["sensitive_keys_found"].append(key)
+
+        # 推奨事項の生成
+        if not results["env_in_gitignore"]:
+            results["recommendations"].append(
+                ".envファイルを.gitignoreに追加してください"
+            )
+
+        if not results["sample_env_exists"]:
+            results["recommendations"].append("sample.envファイルを作成してください")
+
+        if not results["sensitive_keys_found"]:
+            results["recommendations"].append(
+                "必要な機密情報の環境変数が設定されていません"
+            )
+
+        return results
+
+
+# セキュアな設定管理インスタンス
+secure_config_manager = SecureConfigManager()
