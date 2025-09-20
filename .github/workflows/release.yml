@@ -40,7 +40,7 @@ jobs:
         uses: astral-sh/setup-uv@v1
 
       - name: Python セットアップ
-        run: uv python install 3.13
+        run: uv python install 3.12
 
       - name: タグからバージョンを取得
         id: version

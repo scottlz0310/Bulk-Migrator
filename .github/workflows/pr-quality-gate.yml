@@ -22,11 +22,11 @@ jobs:
         uses: astral-sh/setup-uv@v1
 
       - name: Python セットアップ
-        run: uv python install 3.13
+        run: uv python install 3.12
 
       - name: 仮想環境作成と依存関係インストール
         run: |
-          uv venv --python 3.13
+          uv venv --python 3.12
           uv sync
 
       - name: 品質チェック実行

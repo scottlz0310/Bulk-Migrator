@@ -3,7 +3,7 @@ name = "bulk-migrator"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "msal>=1.33.0",
     "pytest>=8.4.1",
@@ -22,7 +22,7 @@ dependencies = [
 
 [tool.ruff]
 line-length = 88
-target-version = "py313"
+target-version = "py312"
 exclude = ["logs/", ".venv/", "build/", ".mypy_cache/", ".pytest_cache/", ".ruff_cache/"]
 
 [tool.ruff.lint]
@@ -32,7 +32,7 @@ select = ["E", "F", "W", "I", "UP", "B", "C90", "T20"]
 known-first-party = ["src"]
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.12"
 warn_unused_ignores = true
 warn_redundant_casts = true
 no_implicit_optional = true
