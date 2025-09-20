@@ -42,7 +42,7 @@ jobs:
       - name: 依存関係インストール
         run: |
           uv venv --python 3.13
-          uv sync --frozen
+          uv sync
 
       - name: 品質チェック実行
         run: |
@@ -65,7 +65,7 @@ jobs:
 
           # テスト
           echo "::group::テスト実行"
-          uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60
+          uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60 --junit-xml=pytest-results.xml
           echo "::endgroup::"
 
           echo "✅ 全ての品質チェックが通過しました"
