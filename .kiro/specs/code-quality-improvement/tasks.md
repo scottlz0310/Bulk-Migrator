@@ -1,26 +1,26 @@
 # 実装計画
 
-- [ ] 1. Phase 4: リンティング・コード品質基盤の構築
+- [x] 1. Phase 4: リンティング・コード品質基盤の構築
   - pyproject.toml に ruff と mypy の設定を追加し、コード品質の標準化を実現
   - 既存コードの print 文を logging に置換し、構造化ログの基盤を構築
   - _要件: 1.1, 1.2, 1.3, 7.2, 8.1, 8.4_
 
-- [ ] 1.1 ruff 設定の追加と基本リンティングルールの適用
+- [x] 1.1 ruff 設定の追加と基本リンティングルールの適用
   - pyproject.toml に ruff 設定セクションを追加（行長88文字、ルール E/F/W/I/UP/B/C90/T20x）
   - 既存コードに対して ruff check を実行し、基本的なコードスタイル違反を修正
   - _要件: 1.1, 1.4_
 
-- [ ] 1.2 mypy 型チェック設定の追加と段階的型ヒント導入
+- [x] 1.2 mypy 型チェック設定の追加と段階的型ヒント導入
   - pyproject.toml に mypy 設定を追加（段階的厳格化対応）
   - src/config_manager.py と src/transfer.py の主要関数に型ヒントを追加
   - _要件: 1.2, 1.3, 8.4_
 
-- [ ] 1.3 print 文の logging 置換と構造化ログ基盤の構築
+- [x] 1.3 print 文の logging 置換と構造化ログ基盤の構築
   - src/ 配下の全ファイルで print 文を logging.getLogger().info() に置換
   - src/structured_logger.py を作成し、JSON 形式の構造化ログ出力クラスを実装
   - _要件: 1.1, 6.1, 6.2, 7.2_
 
-- [ ] 1.4 pre-commit フックの導入と開発ワークフローの自動化
+- [x] 1.4 pre-commit フックの導入と開発ワークフローの自動化
   - .pre-commit-config.yaml を作成し、ruff と mypy の自動実行を設定
   - Makefile を作成し、bootstrap/lint/format/typecheck コマンドを統一
   - _要件: 5.2, 8.2, 8.3_

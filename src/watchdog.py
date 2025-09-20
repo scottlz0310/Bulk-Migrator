@@ -25,14 +25,14 @@ usage:
 
 """
 
-import subprocess
-import time
-import os
-import signal
-import sys
 import json
+import os
+import subprocess
+import sys
+import time
 from datetime import datetime
-from pathlib import Path
+
+from structured_logger import get_structured_logger
 
 # 設定値
 MAIN_LOG_PATH = "logs/transfer_start_success_error.log"
@@ -41,16 +41,19 @@ TIMEOUT_MINUTES = 10  # 10分間ログ更新がなければ再起動
 CHECK_INTERVAL_SEC = 30  # 30秒ごとに監視
 TAIL_LINES = 5  # 再起動時に記録する直前ログの行数
 
+
 def log_watchdog(message):
     """監視ログに出力"""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_message = f"[{timestamp}] {message}"
-    print(log_message)
-    
+    structured_logger = get_structured_logger("watchdog")
+    structured_logger.info(message, timestamp=timestamp)
+
     # ログファイルにも記録
     os.makedirs(os.path.dirname(WATCHDOG_LOG_PATH), exist_ok=True)
     with open(WATCHDOG_LOG_PATH, "a", encoding="utf-8") as f:
         f.write(log_message + "\n")
+
 
 def get_log_mtime():
     """メインログファイルの最終更新時刻を取得"""
@@ -59,25 +62,28 @@ def get_log_mtime():
     except FileNotFoundError:
         return 0
 
+
 def get_tail_lines(file_path, n_lines):
     """ファイルの末尾n行を取得"""
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             lines = f.readlines()
             return lines[-n_lines:] if len(lines) >= n_lines else lines
     except FileNotFoundError:
         return []
+
 
 def format_time_diff(seconds):
     """秒数を読みやすい形式に変換"""
     if seconds < 60:
         return f"{int(seconds)}秒"
     elif seconds < 3600:
-        return f"{int(seconds/60)}分{int(seconds%60)}秒"
+        return f"{int(seconds / 60)}分{int(seconds % 60)}秒"
     else:
         hours = int(seconds / 3600)
         minutes = int((seconds % 3600) / 60)
         return f"{hours}時間{minutes}分"
+
 
 def is_transfer_remaining():
     """転送対象が残っているか判定（OneDrive総件数 > スキップリスト件数）"""
@@ -85,19 +91,22 @@ def is_transfer_remaining():
         # OneDriveファイル数
         with open("logs/onedrive_files.json", encoding="utf-8") as f:
             onedrive_count = len(json.load(f))
-        
+
         # スキップリスト件数
         with open("logs/skip_list.json", encoding="utf-8") as f:
             skiplist_count = len(json.load(f))
-        
+
         remaining = onedrive_count - skiplist_count
-        log_watchdog(f"転送残判定: OneDrive={onedrive_count:,}件, スキップリスト={skiplist_count:,}件, 残り={remaining:,}件")
-        
+        log_watchdog(
+            f"転送残判定: OneDrive={onedrive_count:,}件, スキップリスト={skiplist_count:,}件, 残り={remaining:,}件"
+        )
+
         return remaining > 0
     except Exception as e:
         log_watchdog(f"転送残判定エラー: {e} (念のため継続)")
         # エラー時は念のため転送継続
         return True
+
 
 def main():
     """メイン監視ループ"""
@@ -105,9 +114,9 @@ def main():
     log_watchdog(f"監視対象ログ: {MAIN_LOG_PATH}")
     log_watchdog(f"タイムアウト設定: {TIMEOUT_MINUTES}分")
     log_watchdog(f"監視間隔: {CHECK_INTERVAL_SEC}秒")
-    
+
     restart_count = 0
-    
+
     try:
         while True:
             # src.mainを子プロセスとして起動（標準出力・エラーをファイルにリダイレクト）
@@ -115,11 +124,12 @@ def main():
             log_watchdog(f"src.main起動中... (起動回数: {restart_count + 1})")
 
             os.makedirs("logs", exist_ok=True)
-            with open("logs/src_main_stdout.log", "a", encoding="utf-8") as out, open("logs/src_main_stderr.log", "a", encoding="utf-8") as err:
+            with (
+                open("logs/src_main_stdout.log", "a", encoding="utf-8") as out,
+                open("logs/src_main_stderr.log", "a", encoding="utf-8") as err,
+            ):
                 proc = subprocess.Popen(
-                    [sys.executable, "-m", "src.main"],
-                    stdout=out,
-                    stderr=err
+                    [sys.executable, "-m", "src.main"], stdout=out, stderr=err
                 )
                 log_watchdog(f"src.main起動完了 (PID: {proc.pid})")
                 last_mtime = get_log_mtime()
@@ -132,11 +142,15 @@ def main():
                     # プロセスが自然終了していないかチェック
                     if proc.poll() is not None:
                         elapsed = format_time_diff(time.time() - start_time)
-                        log_watchdog(f"src.mainが自然終了しました (稼働時間: {elapsed}, 終了コード: {proc.returncode})")
+                        log_watchdog(
+                            f"src.mainが自然終了しました (稼働時間: {elapsed}, 終了コード: {proc.returncode})"
+                        )
                         if proc.returncode == 0:
                             # 転送対象が残っているかチェック
                             if is_transfer_remaining():
-                                log_watchdog("転送対象が残っているため、src.mainを再起動します")
+                                log_watchdog(
+                                    "転送対象が残っているため、src.mainを再起動します"
+                                )
                                 break  # ループを抜けて再起動
                             else:
                                 log_watchdog("=== 監視終了（全転送完了） ===")
@@ -159,7 +173,9 @@ def main():
                         elapsed = format_time_diff(time.time() - start_time)
                         idle_formatted = format_time_diff(idle_time)
 
-                        log_watchdog(f"!!! フリーズ検出 !!! (稼働時間: {elapsed}, 無応答時間: {idle_formatted})")
+                        log_watchdog(
+                            f"!!! フリーズ検出 !!! (稼働時間: {elapsed}, 無応答時間: {idle_formatted})"
+                        )
 
                         # 直前のログを記録
                         tail_lines = get_tail_lines(MAIN_LOG_PATH, TAIL_LINES)
@@ -183,7 +199,9 @@ def main():
                             log_watchdog("src.mainをKILLしました")
 
                         restart_count += 1
-                        log_watchdog(f"自動再起動準備中... (累計再起動回数: {restart_count})")
+                        log_watchdog(
+                            f"自動再起動準備中... (累計再起動回数: {restart_count})"
+                        )
                         break
 
             # 短時間での連続再起動を防ぐ
@@ -193,7 +211,7 @@ def main():
 
     except KeyboardInterrupt:
         log_watchdog("監視停止要求を受信")
-        if 'proc' in locals() and proc.poll() is None:
+        if "proc" in locals() and proc.poll() is None:
             log_watchdog("src.mainを停止中...")
             proc.terminate()
             try:
@@ -201,6 +219,7 @@ def main():
             except subprocess.TimeoutExpired:
                 proc.kill()
         log_watchdog("=== 監視終了 ===")
+
 
 if __name__ == "__main__":
     main()

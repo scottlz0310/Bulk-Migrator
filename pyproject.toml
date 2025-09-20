@@ -11,4 +11,29 @@ dependencies = [
     "pytest-mock>=3.14.1",
     "python-dotenv>=1.1.1",
     "requests>=2.32.5",
+    "ruff>=0.8.0",
+    "mypy>=1.8.0",
+    "types-requests>=2.32.0",
+    "pre-commit>=4.0.0",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+exclude = ["logs/", ".venv/", "build/", ".mypy_cache/", ".pytest_cache/", ".ruff_cache/"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C90", "T20"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+# 段階的厳格化: staging で追加設定を有効化
+# disallow_any_generics = true  # staging で有効化予定
+# warn_return_any = true        # staging で有効化予定
+# strict_equality = true        # staging で有効化予定
