@@ -232,7 +232,7 @@ class TestSecureLogger:
                 for handler in secure_logger.logger.handlers[:]:
                     handler.close()
                     secure_logger.logger.removeHandler(handler)
-                
+
                 # モックロガーを設定
                 secure_logger.logger = MagicMock()
 
@@ -248,9 +248,9 @@ class TestSecureLogger:
             finally:
                 secure_logger.close()
                 # Windows対応：ファイルハンドルを確実に閉じる
-                if hasattr(secure_logger.logger, 'handlers'):
+                if hasattr(secure_logger.logger, "handlers"):
                     for handler in secure_logger.logger.handlers[:]:
-                        if hasattr(handler, 'close'):
+                        if hasattr(handler, "close"):
                             handler.close()
                         secure_logger.logger.removeHandler(handler)
 
@@ -266,7 +266,7 @@ class TestSecureLogger:
                 for handler in secure_logger.logger.handlers[:]:
                     handler.close()
                     secure_logger.logger.removeHandler(handler)
-                
+
                 # モックロガーを設定
                 secure_logger.logger = MagicMock()
 
@@ -295,9 +295,9 @@ class TestSecureLogger:
             finally:
                 secure_logger.close()
                 # Windows対応：ファイルハンドルを確実に閉じる
-                if hasattr(secure_logger.logger, 'handlers'):
+                if hasattr(secure_logger.logger, "handlers"):
                     for handler in secure_logger.logger.handlers[:]:
-                        if hasattr(handler, 'close'):
+                        if hasattr(handler, "close"):
                             handler.close()
                         secure_logger.logger.removeHandler(handler)
 
@@ -313,7 +313,7 @@ class TestSecureLogger:
                 for handler in secure_logger.logger.handlers[:]:
                     handler.close()
                     secure_logger.logger.removeHandler(handler)
-                
+
                 # モックロガーを設定
                 secure_logger.logger = MagicMock()
 
@@ -324,9 +324,9 @@ class TestSecureLogger:
             finally:
                 secure_logger.close()
                 # Windows対応：ファイルハンドルを確実に閉じる
-                if hasattr(secure_logger.logger, 'handlers'):
+                if hasattr(secure_logger.logger, "handlers"):
                     for handler in secure_logger.logger.handlers[:]:
-                        if hasattr(handler, 'close'):
+                        if hasattr(handler, "close"):
                             handler.close()
                         secure_logger.logger.removeHandler(handler)
 

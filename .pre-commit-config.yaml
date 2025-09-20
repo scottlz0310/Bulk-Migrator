@@ -13,11 +13,20 @@ repos:
         additional_dependencies: [types-requests]
         args: [--ignore-missing-imports]
 
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+  - repo: local
     hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-      - id: check-added-large-files
-      - id: check-merge-conflict
+      - id: bandit
+        name: bandit
+        entry: uv run bandit
+        language: system
+        args: [-r, src/, --severity-level, medium]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: pytest-check
+        name: pytest-check
+        entry: uv run python -m pytest -p xdist -q -n auto
+        language: system
+        pass_filenames: false
+        always_run: true
