@@ -29,13 +29,15 @@ jobs:
       - name: チェックアウト
         uses: actions/checkout@v4
 
+      - name: Python ${{ matrix.python-version }} セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
       - name: uv セットアップ
         uses: astral-sh/setup-uv@v1
         with:
           version: "latest"
-
-      - name: Python ${{ matrix.python-version }} セットアップ
-        run: uv python install ${{ matrix.python-version }}
 
       - name: 仮想環境作成
         run: uv venv --python ${{ matrix.python-version }}

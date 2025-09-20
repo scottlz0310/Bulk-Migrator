@@ -33,11 +33,13 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: uv セットアップ
         uses: astral-sh/setup-uv@v1
-
-      - name: Python セットアップ
-        run: uv python install 3.12
 
       - name: 依存関係インストール
         run: |
