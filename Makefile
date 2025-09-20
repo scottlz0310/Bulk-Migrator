@@ -24,8 +24,11 @@ test: ## pytest によるテストを実行
 cov: ## カバレッジ付きテストを実行
 	uv run pytest --cov=src --cov-report=term-missing
 
-security: ## セキュリティスキャンを実行（将来の拡張用）
-	@echo "セキュリティスキャンは CI で実行されます"
+security: ## セキュリティスキャンを実行
+	@echo "セキュリティスキャンを実行中..."
+	uv run bandit -r src/ -f txt || true
+	uv run pip-audit --format=json --output=vulnerability-report.json || true
+	@echo "セキュリティスキャンが完了しました"
 
 build: ## プロジェクトをビルド
 	uv build
@@ -41,3 +44,16 @@ dev-setup: bootstrap ## 開発環境の完全セットアップ
 
 quality-check: lint typecheck test ## 品質チェックを一括実行
 	@echo "品質チェックが完了しました"
+
+ci-check: quality-check security ## CI 環境での品質チェック
+	@echo "CI 品質チェックが完了しました"
+
+release-check: ## リリース前の最終チェック
+	@echo "リリース前チェックを実行中..."
+	$(MAKE) quality-check
+	uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60
+	@echo "リリース前チェックが完了しました"
+
+sbom: ## SBOM (Software Bill of Materials) を生成
+	uv run cyclonedx-py -o sbom.json
+	@echo "SBOM が sbom.json に生成されました"

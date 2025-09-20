@@ -1,43 +1,35 @@
-# CHANGELOG
+# Changelog
 
-## [2025-07-10]Ver2.2.2
-- watchdog: 転送対象が残っている限りsrc.mainを自動再起動するように修正
-- utils/predict_completion.py: 実稼働時間・進捗・完了予測スクリプトを新規作成
-- utils/collect_stats.py: 複数ログファイル対応、進捗集計の堅牢化
-- README.md: 仮想環境の有効化手順を追記
-- 不要スクリプト(utils/count_success_in_transfer_log.py)を削除
+All notable changes to this project will be documented in this file.
 
-## [2025-07-09]Ver2.2.1
-- SharePoint障害対応のためwatchdog・自動リトライの運用強化
-- ログ解析・進捗可視化スクリプトの改善
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2025-07-08]Ver2.2
-- スクリプトの完全駆動の確認
-- watchdogによる自動監視・再起動機能追加
-- 進捗確認用ユーティリティーの実装
-- 各種testスクリプトによる検証
+## [Unreleased]
 
-## [2025-07-06]Ver2.1
-- PUT方式では4MB以上のファイル転送に失敗していることを発見し、チャンクアップロード方式の実装を行う
+### Added
+- CI/CD パイプラインの構築
+- GitHub Actions による品質チェック自動化
+- セキュリティスキャンの統合
+- リリース自動化とバージョン管理
 
-## [2025-07-04]Ver2.0
-- Bulk-Safe-Copyの更新を諦めBulk-Migtatorとして、フルスクラッチでスクリプトを刷新
+### Changed
+- pytest 設定に JUnit XML 出力を追加
+- pyproject.toml にセキュリティツールの依存関係を追加
 
-## [2025-06-30]Ver1.3
-- 開発再開
-- ダウンロードURL、PUT方式の着想を得て、スクリプトの改造を試みる。
+### Security
+- CodeQL セキュリティスキャンの導入
+- Bandit による Python セキュリティ脆弱性検出
+- pip-audit による依存関係脆弱性チェック
+- TruffleHog による秘密情報スキャン
+- SBOM (Software Bill of Materials) 生成
 
-## [2025-06-16]Ver1.2
-- 同時進行していたPhotoMapExplorerの開発に注力するため、開発作業を中断
+## [0.1.0] - 2025-01-20
 
-## [2025-06-11]Ver1.1
-- Bulk-Safe-Copyプロジェクトとして転送実験を開始するがスループットが上がらなく試行錯誤を続ける
-
-## [2025-06-09]Ver1.0
-- PowerShellスクリプト方式を諦め、Pythonによる開発に移行、ダウンロードアップロード方式の採用
-
-## [2025-06-05]Ver0.1
-- Powershellスクリプトにて開発開始、様々な問題を克服できず
-
-## [2025-06-03]Ver0.0
-- 逼迫するOnedriveからストレージとしては未利用だったSharepointにファイルを転送するアイデアを着想、手動でファイル転送を試みるが失敗
+### Added
+- 初期リリース
+- OneDrive から SharePoint への大容量ファイル転送機能
+- Microsoft Graph API 統合
+- 構造化ログシステム
+- テストスイートとカバレッジ測定
+- コード品質管理 (ruff, mypy)

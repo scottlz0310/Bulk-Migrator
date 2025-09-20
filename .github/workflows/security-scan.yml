@@ -1,0 +1,228 @@
+name: セキュリティスキャン
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # 毎週月曜日の午前3時（UTC）に実行
+    - cron: '0 3 * * 1'
+
+jobs:
+  codeql:
+    name: CodeQL セキュリティ分析
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'python' ]
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: CodeQL 初期化
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: 自動ビルド
+        uses: github/codeql-action/autobuild@v3
+
+      - name: CodeQL 分析実行
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  dependency-scan:
+    name: 依存関係脆弱性スキャン
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: uv セットアップ
+        uses: astral-sh/setup-uv@v1
+
+      - name: Python セットアップ
+        run: uv python install 3.13
+
+      - name: 依存関係インストール
+        run: |
+          uv venv --python 3.13
+          uv sync --frozen
+
+      - name: pip-audit による脆弱性スキャン
+        run: |
+          uv add --dev pip-audit
+          uv run pip-audit --format=json --output=vulnerability-report.json || true
+
+      - name: 脆弱性レポートの確認
+        run: |
+          if [ -f vulnerability-report.json ]; then
+            echo "脆弱性スキャン結果:"
+            cat vulnerability-report.json
+
+            # 脆弱性が見つかった場合の処理
+            vulnerabilities=$(jq '.vulnerabilities | length' vulnerability-report.json 2>/dev/null || echo "0")
+            if [ "$vulnerabilities" -gt 0 ]; then
+              echo "❌ $vulnerabilities 件の脆弱性が検出されました"
+              echo "詳細は vulnerability-report.json を確認してください"
+              exit 1
+            else
+              echo "✅ 脆弱性は検出されませんでした"
+            fi
+          else
+            echo "脆弱性レポートが生成されませんでした"
+          fi
+
+      - name: 脆弱性レポートのアップロード
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability-report
+          path: vulnerability-report.json
+          retention-days: 30
+
+  bandit-scan:
+    name: Bandit セキュリティスキャン
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: uv セットアップ
+        uses: astral-sh/setup-uv@v1
+
+      - name: Python セットアップ
+        run: uv python install 3.13
+
+      - name: Bandit インストール
+        run: |
+          uv venv --python 3.13
+          uv add --dev bandit[toml]
+
+      - name: Bandit セキュリティスキャン
+        run: |
+          uv run bandit -r src/ -f json -o bandit-report.json || true
+          uv run bandit -r src/ -f txt || true
+
+      - name: Bandit レポートの確認
+        run: |
+          if [ -f bandit-report.json ]; then
+            echo "Bandit スキャン結果:"
+
+            # 高・中レベルの脆弱性をチェック
+            high_issues=$(jq '[.results[] | select(.issue_severity == "HIGH")] | length' bandit-report.json 2>/dev/null || echo "0")
+            medium_issues=$(jq '[.results[] | select(.issue_severity == "MEDIUM")] | length' bandit-report.json 2>/dev/null || echo "0")
+
+            echo "高レベル脆弱性: $high_issues 件"
+            echo "中レベル脆弱性: $medium_issues 件"
+
+            if [ "$high_issues" -gt 0 ]; then
+              echo "❌ 高レベルのセキュリティ問題が検出されました"
+              jq '.results[] | select(.issue_severity == "HIGH")' bandit-report.json
+              exit 1
+            elif [ "$medium_issues" -gt 0 ]; then
+              echo "⚠️ 中レベルのセキュリティ問題が検出されました（警告）"
+              jq '.results[] | select(.issue_severity == "MEDIUM")' bandit-report.json
+            else
+              echo "✅ 重大なセキュリティ問題は検出されませんでした"
+            fi
+          else
+            echo "Bandit レポートが生成されませんでした"
+          fi
+
+      - name: Bandit レポートのアップロード
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 30
+
+  secret-scan:
+    name: 秘密情報スキャン
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 全履歴を取得
+
+      - name: TruffleHog による秘密情報スキャン
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --debug --only-verified
+
+  sbom-generation:
+    name: SBOM 生成
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: uv セットアップ
+        uses: astral-sh/setup-uv@v1
+
+      - name: Python セットアップ
+        run: uv python install 3.13
+
+      - name: 依存関係インストール
+        run: |
+          uv venv --python 3.13
+          uv sync --frozen
+
+      - name: SBOM 生成 (CycloneDX)
+        run: |
+          uv add --dev cyclonedx-bom
+          uv run cyclonedx-py -o sbom.json
+
+      - name: SBOM 検証
+        run: |
+          if [ -f sbom.json ]; then
+            echo "✅ SBOM が正常に生成されました"
+            echo "コンポーネント数: $(jq '.components | length' sbom.json)"
+            echo "生成日時: $(jq -r '.metadata.timestamp' sbom.json)"
+          else
+            echo "❌ SBOM の生成に失敗しました"
+            exit 1
+          fi
+
+      - name: SBOM アップロード
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+          retention-days: 90
