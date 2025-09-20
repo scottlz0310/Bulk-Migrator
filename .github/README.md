@@ -30,13 +30,18 @@
   - 秘密情報スキャン (TruffleHog)
   - SBOM (Software Bill of Materials) 生成
 
-### 4. リリース自動化 (`release.yml`)
-- **トリガー**: push (main), 手動実行
+### 4. リリース準備 (`prepare-release.yml`)
+- **トリガー**: 手動実行のみ
 - **実行内容**:
-  - Conventional Commits に基づく変更内容分析
+  - 品質チェックの実行
   - セマンティックバージョニング
   - pyproject.toml のバージョン更新
   - CHANGELOG.md の自動更新
+  - リリースタグの作成とプッシュ
+
+### 5. リリース自動化 (`release.yml`)
+- **トリガー**: タグプッシュ (`v*`), 手動実行
+- **実行内容**:
   - GitHub Release の自動作成
   - リリースノートの自動生成
 
@@ -78,9 +83,16 @@ make release-check
 3. 修正後、再度プッシュすると自動で再チェックされます
 
 ### リリース
-1. main ブランチへのマージ時に自動でリリース判定が行われます
-2. Conventional Commits に基づいてバージョンが決定されます
-3. 手動でリリースタイプを指定することも可能です
+1. GitHub Actions の「リリース準備」ワークフローを手動実行します
+2. リリースタイプ (patch/minor/major) を選択します
+3. ワークフローが品質チェック、バージョン更新、タグ作成を自動実行します
+4. タグプッシュにより「リリース自動化」ワークフローが自動実行され、GitHub Release が作成されます
+
+#### リリース手順
+1. GitHub の Actions タブから「リリース準備」を選択
+2. 「Run workflow」をクリック
+3. リリースタイプを選択して実行
+4. 完了後、自動的にリリースが作成されます
 
 ## Conventional Commits 規約
 
