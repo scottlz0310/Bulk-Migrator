@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-sys.path.append(str(Path(__file__).parent.parent / "scripts"))
+sys.path.append(str(Path(__file__).parent.parent.parent / "scripts"))
 
 from security_scan import SecurityScanner
 

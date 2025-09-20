@@ -4,19 +4,19 @@
 
 使用例:
 1. OneDriveクロール + ファイルリスト保存:
-   python src/file_crawler_cli.py onedrive --root "TEST-Onedrive" \
+   python utils/file_crawler_cli.py onedrive --root "TEST-Onedrive" \
      --save "logs/onedrive_filelist.json"
 
 2. SharePointクロール + ファイルリスト保存:
-   python src/file_crawler_cli.py sharepoint --root "TEST-Sharepoint" \
+   python utils/file_crawler_cli.py sharepoint --root "TEST-Sharepoint" \
      --save "logs/sharepoint_filelist.json"
 
 3. SharePointクロール + スキップリスト生成:
-   python src/file_crawler_cli.py skiplist --root "TEST-Sharepoint" \
+   python utils/file_crawler_cli.py skiplist --root "TEST-Sharepoint" \
      --save "logs/skip_list.json"
 
 4. ファイル数比較:
-   python src/file_crawler_cli.py compare \
+   python utils/file_crawler_cli.py compare \
      --onedrive "logs/onedrive_filelist.json" \
      --sharepoint "logs/sharepoint_filelist.json"
 """
@@ -37,7 +37,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
 # パス調整後にローカルモジュールをインポート
-from src.file_crawler import (  # noqa: E402
+from file_crawler import (  # noqa: E402
     build_skiplist_from_filelist,
     build_skiplist_from_sharepoint,
     compare_file_counts,
