@@ -6,6 +6,7 @@
 """
 
 import json
+import logging
 import subprocess
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -224,22 +225,23 @@ class QualityMetricsCollector:
 
     def collect_all_metrics(self) -> QualityMetrics:
         """全ての品質メトリクスを収集"""
-        print("品質メトリクスを収集中...")
+        logger = logging.getLogger(__name__)
+        logger.info("品質メトリクスを収集中...")
 
         coverage = self.collect_coverage_metrics()
-        print(f"カバレッジ: {coverage:.1f}%")
+        logger.info(f"カバレッジ: {coverage:.1f}%")
 
         lint_errors = self.collect_lint_metrics()
-        print(f"リンティングエラー: {lint_errors}件")
+        logger.info(f"リンティングエラー: {lint_errors}件")
 
         type_errors = self.collect_type_check_metrics()
-        print(f"型チェックエラー: {type_errors}件")
+        logger.info(f"型チェックエラー: {type_errors}件")
 
         security_vulnerabilities = self.collect_security_metrics()
-        print(f"セキュリティ脆弱性: {security_vulnerabilities}件")
+        logger.info(f"セキュリティ脆弱性: {security_vulnerabilities}件")
 
         test_count, failed_tests = self.collect_test_metrics()
-        print(f"テスト: {test_count}件中{failed_tests}件失敗")
+        logger.info(f"テスト: {test_count}件中{failed_tests}件失敗")
 
         metrics = QualityMetrics(
             timestamp=datetime.now(UTC),
@@ -266,7 +268,8 @@ class QualityMetricsCollector:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(metrics.to_json())
 
-        print(f"品質メトリクスを保存しました: {filepath}")
+        logger = logging.getLogger(__name__)
+        logger.info(f"品質メトリクスを保存しました: {filepath}")
         return filepath
 
     def load_metrics(self, filename: str) -> QualityMetrics | None:
@@ -380,31 +383,35 @@ def main():
     filepath = collector.save_metrics(current_metrics)
 
     # 結果を表示
-    print("\n=== 品質メトリクス レポート ===")
-    print(f"測定日時: {current_metrics.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}")
-    print(f"カバレッジ: {current_metrics.coverage_percentage:.1f}%")
-    print(f"リンティングエラー: {current_metrics.lint_errors}件")
-    print(f"型チェックエラー: {current_metrics.type_errors}件")
-    print(f"セキュリティ脆弱性: {current_metrics.security_vulnerabilities}件")
-    print(
+    logger = logging.getLogger(__name__)
+    logger.info("\n=== 品質メトリクス レポート ===")
+    logger.info(
+        f"測定日時: {current_metrics.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}"
+    )
+    logger.info(f"カバレッジ: {current_metrics.coverage_percentage:.1f}%")
+    logger.info(f"リンティングエラー: {current_metrics.lint_errors}件")
+    logger.info(f"型チェックエラー: {current_metrics.type_errors}件")
+    logger.info(f"セキュリティ脆弱性: {current_metrics.security_vulnerabilities}件")
+    logger.info(
         f"テスト: {current_metrics.test_count}件中{current_metrics.failed_tests}件失敗"
     )
 
+    logger = logging.getLogger(__name__)
     if comparison.get("improvements"):
-        print("\n改善点:")
+        logger.info("\n改善点:")
         for improvement in comparison["improvements"]:
-            print(f"  ✅ {improvement}")
+            logger.info(f"  ✅ {improvement}")
 
     if comparison.get("regressions"):
-        print("\n悪化点:")
+        logger.warning("\n悪化点:")
         for regression in comparison["regressions"]:
-            print(f"  ❌ {regression}")
+            logger.warning(f"  ❌ {regression}")
 
     if "overall_trend" in comparison:
-        print(f"\n全体的な傾向: {comparison['overall_trend']}")
+        logger.info(f"\n全体的な傾向: {comparison['overall_trend']}")
     else:
-        print(f"\n状態: {comparison['status']}")
-    print(f"レポート保存先: {filepath}")
+        logger.info(f"\n状態: {comparison['status']}")
+    logger.info(f"レポート保存先: {filepath}")
 
 
 if __name__ == "__main__":

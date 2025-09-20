@@ -7,6 +7,7 @@
 """
 
 import json
+import logging
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -206,7 +207,8 @@ class QualityAlertSystem:
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(alerts_data, f, ensure_ascii=False, indent=2)
 
-        print(f"アラートを保存しました: {filepath}")
+        logger = logging.getLogger(__name__)
+        logger.info(f"アラートを保存しました: {filepath}")
         return filepath
 
     def send_alert_notification(
@@ -215,7 +217,8 @@ class QualityAlertSystem:
         """アラート通知を送信（メール）"""
         if not alerts or not email_config or not EMAIL_AVAILABLE:
             if not EMAIL_AVAILABLE:
-                print(
+                logger = logging.getLogger(__name__)
+                logger.warning(
                     "メール機能が利用できません。アラートはファイルに保存されました。"
                 )
             return False
@@ -246,14 +249,19 @@ class QualityAlertSystem:
                         )
                     server.send_message(msg)
 
-                print("アラート通知メールを送信しました")
+                logger = logging.getLogger(__name__)
+                logger.info("アラート通知メールを送信しました")
                 return True
             else:
-                print("メール設定が不完全です。アラートはファイルに保存されました。")
+                logger = logging.getLogger(__name__)
+                logger.warning(
+                    "メール設定が不完全です。アラートはファイルに保存されました。"
+                )
                 return False
 
         except Exception as e:
-            print(f"アラート通知の送信に失敗しました: {e}")
+            logger = logging.getLogger(__name__)
+            logger.error(f"アラート通知の送信に失敗しました: {e}")
             return False
 
     def _create_alert_email_body(self, alerts: list[QualityAlert]) -> str:
@@ -499,7 +507,8 @@ class QualityAlertSystem:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(report.to_json())
 
-        print(f"{report.report_type}レポートを保存しました: {filepath}")
+        logger = logging.getLogger(__name__)
+        logger.info(f"{report.report_type}レポートを保存しました: {filepath}")
         return filepath
 
 
@@ -528,11 +537,14 @@ def main():
             alerts = alert_system.check_quality_thresholds(latest_metrics)
             if alerts:
                 alert_system.save_alerts(alerts)
-                print(f"{len(alerts)}件のアラートが生成されました")
+                logger = logging.getLogger(__name__)
+                logger.info(f"{len(alerts)}件のアラートが生成されました")
             else:
-                print("品質閾値内です。アラートはありません。")
+                logger = logging.getLogger(__name__)
+                logger.info("品質閾値内です。アラートはありません。")
         else:
-            print(
+            logger = logging.getLogger(__name__)
+            logger.warning(
                 "メトリクスデータが見つかりません。先に品質メトリクスを収集してください。"
             )
 
@@ -549,8 +561,10 @@ def main():
         alert_system.save_report(report)
 
     if not any([args.check, args.monthly, args.quarterly, args.semi_annual]):
-        print(
-            "使用方法: python src/quality_alerts.py [--check] [--monthly] [--quarterly] [--semi-annual]"
+        logger = logging.getLogger(__name__)
+        logger.info(
+            "使用方法: python src/quality_alerts.py [--check] [--monthly] "
+            "[--quarterly] [--semi-annual]"
         )
 
 

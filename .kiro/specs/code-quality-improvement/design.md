@@ -15,25 +15,25 @@ graph TB
         B --> C[ruff + mypy]
         C --> D[ローカルテスト]
     end
-    
+
     subgraph "CI/CD パイプライン"
         E[GitHub Actions] --> F[マトリクステスト]
         F --> G[品質ゲート]
         G --> H[セキュリティスキャン]
         H --> I[デプロイ]
     end
-    
+
     subgraph "品質監視"
         J[カバレッジレポート] --> K[品質メトリクス]
         K --> L[継続的改善]
     end
-    
+
     subgraph "既存システム"
         M[Bulk-Migration アプリ] --> N[Microsoft Graph API]
         M --> O[構造化ログ]
         O --> P[監視・アラート]
     end
-    
+
     D --> E
     I --> M
     M --> J
@@ -42,21 +42,25 @@ graph TB
 ### 品質向上フェーズ設計
 
 #### Phase 4: リンティング・コード品質
+
 - **目的**: コード品質の標準化と自動化
 - **アプローチ**: 既存コードへの段階的適用
 - **成果物**: 設定ファイル、修正されたソースコード
 
 #### Phase 5: テスト戦略・カバレッジ
+
 - **目的**: テストカバレッジ 60% 達成と品質保証
 - **アプローチ**: 既存テストの強化と新規テスト追加
 - **成果物**: 拡張されたテストスイート、カバレッジレポート
 
 #### Phase 6: CI/CD・自動化
+
 - **目的**: 自動化された品質チェックとデプロイ
 - **アプローチ**: GitHub Actions によるマルチプラットフォーム対応
 - **成果物**: CI/CD パイプライン、品質ゲート
 
 #### Phase 7-8: セキュリティ・監視
+
 - **目的**: セキュリティ強化と運用監視
 - **アプローチ**: 構造化ログと継続的セキュリティ監視
 - **成果物**: セキュリティ設定、監視システム
@@ -66,6 +70,7 @@ graph TB
 ### 1. コード品質管理コンポーネント
 
 #### ruff 設定コンポーネント
+
 ```toml
 # pyproject.toml 内の ruff 設定
 [tool.ruff]
@@ -79,6 +84,7 @@ known-first-party = ["src"]
 ```
 
 #### mypy 設定コンポーネント
+
 ```toml
 # pyproject.toml 内の mypy 設定
 [tool.mypy]
@@ -92,6 +98,7 @@ no_implicit_optional = true
 ### 2. テスト管理コンポーネント
 
 #### pytest 設定コンポーネント
+
 ```toml
 # pyproject.toml 内の pytest 設定
 [tool.pytest.ini_options]
@@ -106,7 +113,7 @@ addopts = [
 ]
 markers = [
     "unit: 単体テスト",
-    "integration: 統合テスト", 
+    "integration: 統合テスト",
     "auth: 認証関連テスト",
     "transfer: ファイル転送テスト",
     "config: 設定関連テスト"
@@ -114,6 +121,7 @@ markers = [
 ```
 
 #### モック戦略コンポーネント
+
 ```python
 # tests/conftest.py での共通モック設定
 @pytest.fixture
@@ -135,6 +143,7 @@ def mock_auth():
 ### 3. CI/CD パイプラインコンポーネント
 
 #### GitHub Actions ワークフロー設計
+
 ```yaml
 # .github/workflows/quality-check.yml
 name: 品質チェック
@@ -146,7 +155,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.11", "3.12", "3.13"]
-    
+
     steps:
       - uses: actions/checkout@v4
       - name: uv セットアップ
@@ -166,24 +175,26 @@ jobs:
 ### 4. セキュリティ管理コンポーネント
 
 #### 秘密情報管理設計
+
 ```python
 # src/config_manager.py の拡張
 class SecureConfigManager(ConfigManager):
     """セキュリティ強化された設定管理"""
-    
+
     def get_masked_config(self) -> Dict[str, Any]:
         """機密情報をマスクした設定を返す"""
         config = self.get_all_config()
         sensitive_keys = ['CLIENT_SECRET', 'TENANT_ID']
-        
+
         for key in sensitive_keys:
             if key in config:
                 config[key] = "***MASKED***"
-        
+
         return config
 ```
 
 #### ログマスキング設計
+
 ```python
 # src/logger.py の拡張
 import re
@@ -191,13 +202,13 @@ from typing import Dict, Any
 
 class SecureLogger:
     """セキュリティ対応ログ出力"""
-    
+
     SENSITIVE_PATTERNS = [
         r'client_secret=[\w-]+',
         r'access_token=[\w.-]+',
         r'tenant_id=[\w-]+',
     ]
-    
+
     def mask_sensitive_data(self, message: str) -> str:
         """機密情報をマスクする"""
         for pattern in self.SENSITIVE_PATTERNS:
@@ -208,6 +219,7 @@ class SecureLogger:
 ### 5. 監視・メトリクス コンポーネント
 
 #### 構造化ログ設計
+
 ```python
 # src/structured_logger.py
 import json
@@ -217,13 +229,13 @@ from typing import Dict, Any, Optional
 
 class StructuredLogger:
     """構造化ログ出力クラス"""
-    
+
     def __init__(self, name: str):
         self.logger = logging.getLogger(name)
         self.setup_json_formatter()
-    
-    def log_transfer_event(self, 
-                          event: str, 
+
+    def log_transfer_event(self,
+                          event: str,
                           file_info: Dict[str, Any],
                           trace_id: Optional[str] = None,
                           **kwargs) -> None:
@@ -241,16 +253,17 @@ class StructuredLogger:
             "file_path": file_info.get("path"),
             **kwargs
         }
-        
+
         # 機密情報のマスキング
         log_data = self.mask_sensitive_data(log_data)
-        
+
         self.logger.info(json.dumps(log_data, ensure_ascii=False))
 ```
 
 ## データモデル
 
 ### 品質メトリクス データモデル
+
 ```python
 from dataclasses import dataclass
 from datetime import datetime
@@ -266,7 +279,7 @@ class QualityMetrics:
     security_vulnerabilities: int
     test_count: int
     failed_tests: int
-    
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -293,6 +306,7 @@ class PhaseProgress:
 ```
 
 ### 設定管理 データモデル
+
 ```python
 @dataclass
 class QualityConfig:
@@ -301,12 +315,12 @@ class QualityConfig:
     max_lint_errors: int = 0
     max_type_errors: int = 0
     max_security_vulnerabilities: int = 0
-    
+
     # 段階的厳格化設定
     prototype_config: Dict[str, Any] = None
     staging_config: Dict[str, Any] = None
     production_config: Dict[str, Any] = None
-    
+
     def get_config_for_phase(self, phase: str) -> Dict[str, Any]:
         """フェーズに応じた設定を取得"""
         configs = {
@@ -320,6 +334,7 @@ class QualityConfig:
 ## エラーハンドリング
 
 ### 品質チェック エラーハンドリング
+
 ```python
 class QualityCheckError(Exception):
     """品質チェック関連エラー"""
@@ -340,6 +355,7 @@ class SecurityVulnerabilityError(QualityCheckError):
 ```
 
 ### 段階的導入 エラーハンドリング
+
 ```python
 class PhaseTransitionError(Exception):
     """フェーズ移行エラー"""
@@ -356,6 +372,7 @@ class PhaseTransitionError(Exception):
 ## テスト戦略
 
 ### テスト階層設計
+
 1. **単体テスト (Unit Tests)**
    - 各モジュールの個別機能テスト
    - モック使用による外部依存排除
@@ -372,31 +389,33 @@ class PhaseTransitionError(Exception):
    - エラーレスポンスの処理確認
 
 ### Microsoft Graph API テスト戦略
+
 ```python
 # tests/test_graph_api_contract.py
 class TestGraphAPIContract:
     """Microsoft Graph API 契約テスト"""
-    
+
     @pytest.mark.integration
     def test_file_upload_contract(self, mock_graph_response):
         """ファイルアップロード API の契約テスト"""
         # 期待されるレスポンス形式を検証
         expected_fields = ["id", "name", "size", "lastModifiedDateTime"]
-        
+
         for field in expected_fields:
             assert field in mock_graph_response
-    
-    @pytest.mark.integration  
+
+    @pytest.mark.integration
     def test_error_response_handling(self, mock_error_response):
         """エラーレスポンスの処理テスト"""
         with pytest.raises(GraphAPIError) as exc_info:
             # エラーレスポンスの処理を検証
             pass
-        
+
         assert "適切なエラーメッセージ" in str(exc_info.value)
 ```
 
 ### カバレッジ向上戦略
+
 1. **未カバー行の特定**: `pytest --cov-report=term-missing` による詳細レポート
 2. **優先順位付け**: 重要度の高いモジュールから順次対応
 3. **段階的改善**: 現在 → 60% (staging) → 80% (production)
@@ -404,6 +423,7 @@ class TestGraphAPIContract:
 ## 実装計画
 
 ### Week 1-2: 基盤整備
+
 1. **設定ファイル作成**
    - `pyproject.toml` に ruff/mypy 設定追加
    - `.pre-commit-config.yaml` 作成
@@ -415,6 +435,7 @@ class TestGraphAPIContract:
    - import 順序統一
 
 ### Week 3-4: テスト強化
+
 1. **テストカバレッジ測定**
    - 現在のカバレッジ状況把握
    - 未カバー行の特定と優先順位付け
@@ -425,6 +446,7 @@ class TestGraphAPIContract:
    - モック戦略の実装
 
 ### Week 5-6: CI/CD 導入
+
 1. **GitHub Actions 設定**
    - 基本ワークフロー作成
    - マトリクステスト設定
@@ -436,6 +458,7 @@ class TestGraphAPIContract:
    - 依存関係脆弱性チェック
 
 ### Week 7-8: セキュリティ・監視
+
 1. **構造化ログ導入**
    - JSON 形式ログ出力
    - 機密情報マスキング
@@ -449,21 +472,25 @@ class TestGraphAPIContract:
 ## 成功指標
 
 ### Phase 4 完了条件
+
 - `uv run ruff check .` でエラー 0
 - `uv run mypy .` でエラー 0
 - 全 print 文の logging 置換完了
 
-### Phase 5 完了条件  
+### Phase 5 完了条件
+
 - テストカバレッジ 60% 以上達成
 - 全テストケースにコメント・目的明記
 - CI/CD でのカバレッジゲート設定完了
 
 ### Phase 6 完了条件
+
 - GitHub Actions 全チェック通過
 - セキュリティスキャンで脆弱性 0
 - 自動化されたリリースプロセス構築
 
 ### Phase 7-8 完了条件
+
 - 構造化ログ導入完了
 - 秘密情報管理強化完了
 - 監視・アラート設定完了
