@@ -110,7 +110,7 @@ class TestSecureLogger:
             secure_logger = SecureLogger("test_logger", log_path)
 
             test_message = (
-                "Request with access_token=" "'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9'"
+                "Request with access_token='eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9'"
             )
             try:
                 jwt_snippet = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9"
@@ -130,9 +130,7 @@ class TestSecureLogger:
             log_path = os.path.join(temp_dir, "test.log")
             secure_logger = SecureLogger("test_logger", log_path)
 
-            test_message = (
-                "Authorization: Bearer " "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9"
-            )
+            test_message = "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9"
             try:
                 jwt_snippet = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9"
                 masked_message = secure_logger.mask_sensitive_data(test_message)
@@ -172,7 +170,7 @@ class TestSecureLogger:
             secure_logger = SecureLogger("test_logger", log_path)
 
             test_message = (
-                "client_secret=abc123 and api_key: xyz789 and " "password='secret123'"
+                "client_secret=abc123 and api_key: xyz789 and password='secret123'"
             )
             try:
                 masked_message = secure_logger.mask_sensitive_data(test_message)
