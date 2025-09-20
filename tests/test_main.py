@@ -99,7 +99,8 @@ class TestConfigHash:
 
     @patch.dict(os.environ, {})
     def test_get_current_config_hash_with_none_values(self):
-        """検証対象: get_current_config_hash() 目的: 環境変数未設定時のハッシュ生成確認"""
+        """検証対象: get_current_config_hash()
+        目的: 環境変数未設定時のハッシュ生成確認"""
         hash_value = get_current_config_hash()
 
         assert isinstance(hash_value, str)
@@ -107,7 +108,8 @@ class TestConfigHash:
 
     @patch("os.path.exists")
     def test_check_config_changed_no_hash_file(self, mock_exists):
-        """検証対象: check_config_changed() 目的: ハッシュファイル未存在時の初回作成確認"""
+        """検証対象: check_config_changed()
+        目的: ハッシュファイル未存在時の初回作成確認"""
         mock_exists.return_value = False
 
         with patch("builtins.open", mock_open()) as mock_file:
@@ -158,7 +160,8 @@ class TestClearLogsAndUpdateConfig:
         mock_onedrive_path,
         mock_get_config,
     ):
-        """検証対象: clear_logs_and_update_config() 目的: ログファイル削除と設定更新確認"""
+        """検証対象: clear_logs_and_update_config()
+        目的: ログファイル削除と設定更新確認"""
         # モックの設定
         mock_onedrive_path.return_value = "logs/onedrive_files.json"
         mock_sharepoint_path.return_value = "logs/sharepoint_files.json"
@@ -235,7 +238,8 @@ class TestGetOneDriveFiles:
 
     @patch("src.main.GraphTransferClient")
     def test_get_onedrive_files_missing_env_vars(self, mock_client):
-        """検証対象: get_onedrive_files() 目的: 必須環境変数未設定時の空リスト返却確認"""
+        """検証対象: get_onedrive_files()
+        目的: 必須環境変数未設定時の空リスト返却確認"""
         with patch.dict(os.environ, {}, clear=True):
             result = get_onedrive_files()
 
@@ -418,7 +422,8 @@ class TestRunTransfer:
         mock_executor.submit.assert_called_once()
 
     def test_run_transfer_missing_env_vars(self):
-        """検証対象: run_transfer() 目的: 必須環境変数未設定時のエラーハンドリング確認"""
+        """検証対象: run_transfer()
+        目的: 必須環境変数未設定時のエラーハンドリング確認"""
         with patch.dict(os.environ, {}, clear=True):
             # エラーログが出力されるが例外は発生しない
             run_transfer()

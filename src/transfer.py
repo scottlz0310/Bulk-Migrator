@@ -31,14 +31,10 @@ def _build_onedrive_download_url(
 ) -> str:
     """OneDriveダウンロードURL構築のヘルパー関数"""
     if onedrive_drive_id and onedrive_drive_id.strip():
-        return (
-            f"{base_url}/drives/{onedrive_drive_id}" f"/root:/{encoded_path}:/content"
-        )
+        return f"{base_url}/drives/{onedrive_drive_id}/root:/{encoded_path}:/content"
     else:
         user_principal = os.getenv("SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME")
-        return (
-            f"{base_url}/users/{user_principal}" f"/drive/root:/{encoded_path}:/content"
-        )
+        return f"{base_url}/users/{user_principal}/drive/root:/{encoded_path}:/content"
 
 
 # OneDrive/SharePoint ディレクトリ再帰取得・転送ロジック雛形

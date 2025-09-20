@@ -216,7 +216,8 @@ class TestCreateSkipListFromSharepoint:
 
     @patch("src.rebuild_skip_list.get_structured_logger")
     def test_create_skip_list_success(self, mock_logger):
-        """検証対象: create_skip_list_from_sharepoint() 目的: スキップリスト作成成功時の動作確認"""
+        """検証対象: create_skip_list_from_sharepoint()
+        目的: スキップリスト作成成功時の動作確認"""
         mock_logger_instance = Mock()
         mock_logger.return_value = mock_logger_instance
 
@@ -272,7 +273,8 @@ class TestCreateSkipListFromSharepoint:
 
     @patch("src.rebuild_skip_list.get_structured_logger")
     def test_create_skip_list_no_matches(self, mock_logger):
-        """検証対象: create_skip_list_from_sharepoint() 目的: マッチするファイルがない場合の動作確認"""
+        """検証対象: create_skip_list_from_sharepoint()
+        目的: マッチするファイルがない場合の動作確認"""
         mock_logger_instance = Mock()
         mock_logger.return_value = mock_logger_instance
 
@@ -315,7 +317,8 @@ class TestCreateSkipListFromSharepoint:
 
     @patch("src.rebuild_skip_list.get_structured_logger")
     def test_create_skip_list_empty_inputs(self, mock_logger):
-        """検証対象: create_skip_list_from_sharepoint() 目的: 空のファイルリスト処理確認"""
+        """検証対象: create_skip_list_from_sharepoint()
+        目的: 空のファイルリスト処理確認"""
         mock_logger_instance = Mock()
         mock_logger.return_value = mock_logger_instance
 
@@ -374,7 +377,8 @@ class TestCreateSkipListFromSharepoint:
 
     @patch("src.rebuild_skip_list.get_structured_logger")
     def test_create_skip_list_with_config_manager_import_error(self, mock_logger):
-        """検証対象: create_skip_list_from_sharepoint() 目的: config_manager インポートエラー時のフォールバック確認"""
+        """検証対象: create_skip_list_from_sharepoint()
+        目的: config_manager インポートエラー時のフォールバック確認"""
         mock_logger_instance = Mock()
         mock_logger.return_value = mock_logger_instance
 

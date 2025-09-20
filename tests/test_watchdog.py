@@ -180,7 +180,8 @@ class TestHandleProcessTermination:
     def test_handle_process_termination_success_with_remaining(
         self, mock_time, mock_log, mock_remaining
     ):
-        """検証対象: _handle_process_termination() 目的: 正常終了・転送残あり時のrestart返却確認"""
+        """検証対象: _handle_process_termination()
+        目的: 正常終了・転送残あり時のrestart返却確認"""
         mock_time.return_value = 1000.0
         mock_remaining.return_value = True
 
@@ -201,7 +202,8 @@ class TestHandleProcessTermination:
     def test_handle_process_termination_success_complete(
         self, mock_time, mock_log, mock_remaining
     ):
-        """検証対象: _handle_process_termination() 目的: 正常終了・転送完了時のcomplete返却確認"""
+        """検証対象: _handle_process_termination()
+        目的: 正常終了・転送完了時のcomplete返却確認"""
         mock_time.return_value = 1000.0
         mock_remaining.return_value = False
 
@@ -216,7 +218,8 @@ class TestHandleProcessTermination:
     @patch("src.watchdog.log_watchdog")
     @patch("time.time")
     def test_handle_process_termination_error(self, mock_time, mock_log):
-        """検証対象: _handle_process_termination() 目的: エラー終了時のrestart返却確認"""
+        """検証対象: _handle_process_termination()
+        目的: エラー終了時のrestart返却確認"""
         mock_time.return_value = 1000.0
 
         mock_proc = Mock()
@@ -264,7 +267,8 @@ class TestHandleFreezeDetection:
     @patch("src.watchdog.log_watchdog")
     @patch("time.time")
     def test_handle_freeze_detection_timeout_kill(self, mock_time, mock_log, mock_tail):
-        """検証対象: _handle_freeze_detection() 目的: 終了タイムアウト時のKILL処理確認"""
+        """検証対象: _handle_freeze_detection()
+        目的: 終了タイムアウト時のKILL処理確認"""
         mock_time.return_value = 2000.0
         mock_tail.return_value = []
 
@@ -294,7 +298,7 @@ class TestStartMainProcess:
         mock_proc.pid = 12345
         mock_popen.return_value = mock_proc
 
-        with patch("builtins.open", mock_open()) as mock_file:
+        with patch("builtins.open", mock_open()):
             result = _start_main_process()
 
         assert result == mock_proc
@@ -395,7 +399,8 @@ class TestHandleKeyboardInterrupt:
 
     @patch("src.watchdog.log_watchdog")
     def test_handle_keyboard_interrupt_timeout_kill(self, mock_log):
-        """検証対象: _handle_keyboard_interrupt() 目的: 停止タイムアウト時のKILL処理確認"""
+        """検証対象: _handle_keyboard_interrupt()
+        目的: 停止タイムアウト時のKILL処理確認"""
         mock_proc = Mock()
         mock_proc.poll.return_value = None
         mock_proc.wait.side_effect = subprocess.TimeoutExpired("cmd", 10)

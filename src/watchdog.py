@@ -133,7 +133,7 @@ def _handle_freeze_detection(proc, start_time, idle_time):
     idle_formatted = format_time_diff(idle_time)
 
     log_watchdog(
-        f"!!! フリーズ検出 !!! " f"(稼働時間: {elapsed}, 無応答時間: {idle_formatted})"
+        f"!!! フリーズ検出 !!! (稼働時間: {elapsed}, 無応答時間: {idle_formatted})"
     )
 
     # 直前のログを記録

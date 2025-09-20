@@ -197,7 +197,8 @@ class TestFileLock:
             assert not os.path.exists(lockfile)
 
     def test_integration_context_manager_with_real_files(self):
-        """検証対象: FileLock context manager integration 目的: 実ファイルでのwith文統合テスト"""
+        """検証対象: FileLock context manager integration
+        目的: 実ファイルでのwith文統合テスト"""
         with tempfile.TemporaryDirectory() as temp_dir:
             lockfile = os.path.join(temp_dir, "test.lock")
 
@@ -214,7 +215,8 @@ class TestFileLock:
             assert not os.path.exists(lockfile)
 
     def test_multiple_locks_different_files(self):
-        """検証対象: FileLock multiple instances 目的: 異なるファイルでの複数ロック確認"""
+        """検証対象: FileLock multiple instances
+        目的: 異なるファイルでの複数ロック確認"""
         with tempfile.TemporaryDirectory() as temp_dir:
             lockfile1 = os.path.join(temp_dir, "test1.lock")
             lockfile2 = os.path.join(temp_dir, "test2.lock")
