@@ -1,6 +1,7 @@
+import errno
 import os
 import time
-import errno
+
 
 class FileLock:
     def __init__(self, lockfile, timeout=10):

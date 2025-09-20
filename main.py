@@ -1,5 +1,5 @@
 def main():
-    print("Hello from bulk-migrator!")
+    pass
 
 
 if __name__ == "__main__":
