@@ -4,18 +4,24 @@
 
 使用例:
 1. OneDriveクロール + ファイルリスト保存:
-   python src/file_crawler_cli.py onedrive --root "TEST-Onedrive" --save "logs/onedrive_filelist.json"
+   python src/file_crawler_cli.py onedrive --root "TEST-Onedrive" \
+     --save "logs/onedrive_filelist.json"
 
 2. SharePointクロール + ファイルリスト保存:
-   python src/file_crawler_cli.py sharepoint --root "TEST-Sharepoint" --save "logs/sharepoint_filelist.json"
+   python src/file_crawler_cli.py sharepoint --root "TEST-Sharepoint" \
+     --save "logs/sharepoint_filelist.json"
 
 3. SharePointクロール + スキップリスト生成:
-   python src/file_crawler_cli.py skiplist --root "TEST-Sharepoint" --save "logs/skip_list.json"
+   python src/file_crawler_cli.py skiplist --root "TEST-Sharepoint" \
+     --save "logs/skip_list.json"
 
 4. ファイル数比較:
-   python src/file_crawler_cli.py compare --onedrive "logs/onedrive_filelist.json" --sharepoint "logs/sharepoint_filelist.json"
+   python src/file_crawler_cli.py compare \
+     --onedrive "logs/onedrive_filelist.json" \
+     --sharepoint "logs/sharepoint_filelist.json"
 """
 
+import argparse
 import os
 import sys
 
@@ -24,15 +30,14 @@ from dotenv import load_dotenv
 # プロジェクトルートの.envを必ず読み込む（OS環境変数優先、なければ.env）
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
 load_dotenv(env_path, override=False)
-import argparse
 
 # srcディレクトリから実行する場合のパス調整
-if __name__ == "__main__":
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    parent_dir = os.path.dirname(current_dir)
-    sys.path.insert(0, parent_dir)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
 
-from src.file_crawler import (
+# パス調整後にローカルモジュールをインポート
+from src.file_crawler import (  # noqa: E402
     build_skiplist_from_filelist,
     build_skiplist_from_sharepoint,
     compare_file_counts,

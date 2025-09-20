@@ -7,7 +7,8 @@
   - SharePoint現状ファイル数・スキップリスト件数も表示
 【使い方】
   $ python utils/collect_stats.py
-  （logs/transfer_start_success_error.log*, logs/sharepoint_current_files.json, logs/skip_list.json を集計）
+  （logs/transfer_start_success_error.log*,
+   logs/sharepoint_current_files.json, logs/skip_list.json を集計）
 """
 
 import json
@@ -50,8 +51,8 @@ def main():
         for log_file in log_files:
             with open(log_file, encoding="utf-8") as f:
                 lines = f.readlines()
-            success = sum(1 for l in lines if "SUCCESS:" in l)
-            error = sum(1 for l in lines if "ERROR:" in l)
+            success = sum(1 for line in lines if "SUCCESS:" in line)
+            error = sum(1 for line in lines if "ERROR:" in line)
             total = success + error
             (success / total * 100) if total else 0
             total_success += success

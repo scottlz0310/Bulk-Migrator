@@ -57,7 +57,8 @@ def crawl_onedrive_files(
 
     Args:
         root_folder: OneDriveのルートフォルダ名
-        user_principal_name: OneDriveのユーザープリンシパル名（None時は環境変数から取得）
+        user_principal_name: OneDriveのユーザープリンシパル名
+            （None時は環境変数から取得）
 
     Returns:
         重複排除済みファイルリスト
@@ -71,11 +72,8 @@ def crawl_onedrive_files(
                 "user_principal_nameまたは環境変数SOURCE_ONEDRIVE_USER_PRINCIPAL_NAMEが必要です"
             )
 
-    items = client.list_onedrive_items(
-        user_principal_name=user_principal_name, folder_path=root_folder
-    )
-    file_targets = client.collect_file_targets(
-        items, parent_path=root_folder, user_principal_name=user_principal_name
+    file_targets = client.collect_file_targets_from_onedrive(
+        folder_path=root_folder, user_principal_name=user_principal_name
     )
 
     return file_targets
@@ -95,8 +93,10 @@ def crawl_sharepoint_files(
     """
     client = create_transfer_client()
 
+    # Get SharePoint items and convert to file targets format
     items = client.list_drive_items(folder_path=root_folder)
-    file_targets = client.collect_file_targets(items, parent_path=root_folder)
+    # Convert items to file targets format (items already have the right structure)
+    file_targets = [item for item in items if item.get("file")]
 
     return file_targets
 
@@ -210,62 +210,65 @@ def compare_file_counts(
         pass
 
 
+def _normalize_skip_list_path(path: str) -> str:
+    """スキップリストパスを正規化"""
+    if not path.endswith(".json"):
+        if path.endswith("/") or path.endswith("\\"):
+            return path + "skip_list.json"
+        else:
+            return path + "/skip_list.json"
+    return path
+
+
+def _handle_sharepoint_rebuild():
+    """SharePointからのスキップリスト再構築を処理"""
+    root_folder = input(
+        "SharePointルートフォルダ名 (デフォルト: config設定値): "
+    ).strip()
+    skip_list_path = input("スキップリスト保存先 (デフォルト: config設定値): ").strip()
+
+    if skip_list_path:
+        skip_list_path = _normalize_skip_list_path(skip_list_path)
+
+    try:
+        build_skiplist_from_sharepoint(
+            root_folder if root_folder else None,
+            skip_list_path if skip_list_path else None,
+        )
+    except (ValueError, Exception):
+        pass
+
+
+def _handle_filelist_rebuild():
+    """ファイルリストからのスキップリスト再構築を処理"""
+    file_list_path = input("ファイルリストのパスを入力: ").strip()
+    if not file_list_path:
+        return
+
+    config = load_config()
+    skip_list_path = input("スキップリスト保存先 (デフォルト: config設定値): ").strip()
+
+    if not skip_list_path:
+        skip_list_path = config.get("skip_list_path", "logs/skip_list.json")
+    else:
+        skip_list_path = _normalize_skip_list_path(skip_list_path)
+
+    try:
+        file_targets = load_file_list(file_list_path)
+        build_skiplist_from_filelist(file_targets, skip_list_path)
+    except (FileNotFoundError, Exception):
+        pass
+
+
 def rebuild_skiplist_interactive() -> None:
     """
     対話形式でスキップリストを再構築
     """
-
     choice = input("選択してください (1 or 2): ").strip()
 
     if choice == "1":
-        root_folder = input(
-            "SharePointルートフォルダ名 (デフォルト: config設定値): "
-        ).strip()
-        skip_list_path = input(
-            "スキップリスト保存先 (デフォルト: config設定値): "
-        ).strip()
-
-        # ディレクトリ名だけが指定された場合、デフォルトファイル名を追加
-        if skip_list_path and not skip_list_path.endswith(".json"):
-            if skip_list_path.endswith("/") or skip_list_path.endswith("\\"):
-                skip_list_path += "skip_list.json"
-            else:
-                skip_list_path += "/skip_list.json"
-
-        try:
-            build_skiplist_from_sharepoint(
-                root_folder if root_folder else None,
-                skip_list_path if skip_list_path else None,
-            )
-        except ValueError:
-            pass
-        except Exception:
-            pass
-
+        _handle_sharepoint_rebuild()
     elif choice == "2":
-        file_list_path = input("ファイルリストのパスを入力: ").strip()
-        if not file_list_path:
-            return
-
-        config = load_config()
-        skip_list_path = input(
-            "スキップリスト保存先 (デフォルト: config設定値): "
-        ).strip()
-        if not skip_list_path:
-            skip_list_path = config.get("skip_list_path", "logs/skip_list.json")
-        elif not skip_list_path.endswith(".json"):
-            if skip_list_path.endswith("/") or skip_list_path.endswith("\\"):
-                skip_list_path += "skip_list.json"
-            else:
-                skip_list_path += "/skip_list.json"
-
-        try:
-            file_targets = load_file_list(file_list_path)
-            build_skiplist_from_filelist(file_targets, skip_list_path)
-        except FileNotFoundError:
-            pass
-        except Exception:
-            pass
-
+        _handle_filelist_rebuild()
     else:
         pass

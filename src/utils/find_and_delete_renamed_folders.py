@@ -83,7 +83,7 @@ def main():
     ]
 
     if not args.delete:
-        for f in renamed_folders:
+        for _f in renamed_folders:
             if args.verbose:
                 pass
         return

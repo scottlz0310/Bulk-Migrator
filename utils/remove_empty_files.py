@@ -114,12 +114,12 @@ def delete_files(files, dry_run=True):
         return
 
     if dry_run:
-        for file_path in files:
+        for _file_path in files:
             pass
         return
 
     # 確認プロンプト
-    for file_path in files:
+    for _file_path in files:
         pass
 
     confirm = input(f"\n{len(files)}個のファイルを削除しますか？ (y/N): ")

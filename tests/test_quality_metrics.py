@@ -155,7 +155,8 @@ class TestQualityMetricsCollector:
     @patch("subprocess.run")
     def test_collect_coverage_metrics_failure(self, mock_run, collector):
         """カバレッジメトリクス収集失敗テスト"""
-        # 検証対象: QualityMetricsCollector.collect_coverage_metrics() のエラーハンドリング
+        # 検証対象: QualityMetricsCollector.collect_coverage_metrics()
+        # のエラーハンドリング
         # 目的: コマンド実行失敗時に0.0が返されることを確認
 
         mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="Error")
@@ -190,7 +191,10 @@ class TestQualityMetricsCollector:
         # 目的: 型チェックエラー数が正常に収集されることを確認
 
         # mypyの出力をモック
-        mypy_output = "src/test.py:10: error: Incompatible types\nsrc/test.py:15: error: Missing return"
+        mypy_output = (
+            "src/test.py:10: error: Incompatible types\n"
+            "src/test.py:15: error: Missing return"
+        )
         mock_run.return_value = MagicMock(returncode=1, stdout=mypy_output, stderr="")
 
         result = collector.collect_type_check_metrics()

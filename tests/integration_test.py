@@ -199,7 +199,9 @@ class IntegrationTestRunner:
                     "run",
                     "python",
                     "-c",
-                    "from src.structured_logger import get_structured_logger; logger = get_structured_logger('test'); logger.info('テストメッセージ')",
+                    "from src.structured_logger import get_structured_logger; "
+                    "logger = get_structured_logger('test'); "
+                    "logger.info('テストメッセージ')",
                 ],
                 "構造化ログ機能テスト",
             ),

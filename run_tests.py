@@ -53,13 +53,15 @@ def check_coverage():
 
 def check_dependencies():
     """依存関係の確認"""
-    try:
-        import coverage  # pytest-cov は coverage を使用
-        import pytest
+    import importlib.util
 
-        return True
-    except ImportError:
+    # pytest-cov は coverage を使用するため確認
+    if importlib.util.find_spec("coverage") is None:
         return False
+    if importlib.util.find_spec("pytest") is None:
+        return False
+
+    return True
 
 
 def main():

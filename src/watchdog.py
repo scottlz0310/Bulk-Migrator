@@ -98,7 +98,8 @@ def is_transfer_remaining():
 
         remaining = onedrive_count - skiplist_count
         log_watchdog(
-            f"転送残判定: OneDrive={onedrive_count:,}件, スキップリスト={skiplist_count:,}件, 残り={remaining:,}件"
+            f"転送残判定: OneDrive={onedrive_count:,}件, "
+            f"スキップリスト={skiplist_count:,}件, 残り={remaining:,}件"
         )
 
         return remaining > 0
@@ -106,6 +107,112 @@ def is_transfer_remaining():
         log_watchdog(f"転送残判定エラー: {e} (念のため継続)")
         # エラー時は念のため転送継続
         return True
+
+
+def _handle_process_termination(proc, start_time):
+    """プロセス自然終了の処理"""
+    elapsed = format_time_diff(time.time() - start_time)
+    log_watchdog(
+        f"src.mainが自然終了しました "
+        f"(稼働時間: {elapsed}, 終了コード: {proc.returncode})"
+    )
+    if proc.returncode == 0:
+        # 転送対象が残っているかチェック
+        if is_transfer_remaining():
+            log_watchdog("転送対象が残っているため、src.mainを再起動します")
+            return "restart"
+        else:
+            log_watchdog("=== 監視終了（全転送完了） ===")
+            return "complete"
+    return "restart"
+
+
+def _handle_freeze_detection(proc, start_time, idle_time):
+    """フリーズ検出時の処理"""
+    elapsed = format_time_diff(time.time() - start_time)
+    idle_formatted = format_time_diff(idle_time)
+
+    log_watchdog(
+        f"!!! フリーズ検出 !!! " f"(稼働時間: {elapsed}, 無応答時間: {idle_formatted})"
+    )
+
+    # 直前のログを記録
+    tail_lines = get_tail_lines(MAIN_LOG_PATH, TAIL_LINES)
+    if tail_lines:
+        log_watchdog("=== 直前のログ ===")
+        for line in tail_lines:
+            log_watchdog(f"  {line.rstrip()}")
+        log_watchdog("=== 直前のログ終了 ===")
+
+    # プロセス強制終了
+    log_watchdog(f"src.main強制終了中... (PID: {proc.pid})")
+    proc.terminate()
+
+    try:
+        proc.wait(timeout=10)
+        log_watchdog("src.main正常終了")
+    except subprocess.TimeoutExpired:
+        log_watchdog("強制終了タイムアウト、KILL送信")
+        proc.kill()
+        proc.wait()
+        log_watchdog("src.mainをKILLしました")
+
+
+def _start_main_process():
+    """src.mainプロセスを起動"""
+    os.makedirs("logs", exist_ok=True)
+    with (
+        open("logs/src_main_stdout.log", "a", encoding="utf-8") as out,
+        open("logs/src_main_stderr.log", "a", encoding="utf-8") as err,
+    ):
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "src.main"], stdout=out, stderr=err
+        )
+        log_watchdog(f"src.main起動完了 (PID: {proc.pid})")
+        return proc
+
+
+def _monitor_process(proc, start_time):
+    """プロセス監視ループ"""
+    last_mtime = get_log_mtime()
+    last_check_time = time.time()
+
+    while True:
+        time.sleep(CHECK_INTERVAL_SEC)
+
+        # プロセスが自然終了していないかチェック
+        if proc.poll() is not None:
+            result = _handle_process_termination(proc, start_time)
+            return result
+
+        # ログファイルの更新チェック
+        current_mtime = get_log_mtime()
+        current_time = time.time()
+
+        if current_mtime > last_mtime:
+            # ログが更新された
+            last_mtime = current_mtime
+            last_check_time = current_time
+            continue
+
+        # タイムアウトチェック
+        idle_time = current_time - last_check_time
+        if idle_time > (TIMEOUT_MINUTES * 60):
+            _handle_freeze_detection(proc, start_time, idle_time)
+            return "restart"
+
+
+def _handle_keyboard_interrupt(proc):
+    """キーボード割り込み処理"""
+    log_watchdog("監視停止要求を受信")
+    if proc and proc.poll() is None:
+        log_watchdog("src.mainを停止中...")
+        proc.terminate()
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+    log_watchdog("=== 監視終了 ===")
 
 
 def main():
@@ -116,93 +223,21 @@ def main():
     log_watchdog(f"監視間隔: {CHECK_INTERVAL_SEC}秒")
 
     restart_count = 0
+    proc = None
 
     try:
         while True:
-            # src.mainを子プロセスとして起動（標準出力・エラーをファイルにリダイレクト）
             start_time = time.time()
             log_watchdog(f"src.main起動中... (起動回数: {restart_count + 1})")
 
-            os.makedirs("logs", exist_ok=True)
-            with (
-                open("logs/src_main_stdout.log", "a", encoding="utf-8") as out,
-                open("logs/src_main_stderr.log", "a", encoding="utf-8") as err,
-            ):
-                proc = subprocess.Popen(
-                    [sys.executable, "-m", "src.main"], stdout=out, stderr=err
-                )
-                log_watchdog(f"src.main起動完了 (PID: {proc.pid})")
-                last_mtime = get_log_mtime()
-                last_check_time = time.time()
+            proc = _start_main_process()
+            result = _monitor_process(proc, start_time)
 
-                # 監視ループ
-                while True:
-                    time.sleep(CHECK_INTERVAL_SEC)
+            if result == "complete":
+                return
 
-                    # プロセスが自然終了していないかチェック
-                    if proc.poll() is not None:
-                        elapsed = format_time_diff(time.time() - start_time)
-                        log_watchdog(
-                            f"src.mainが自然終了しました (稼働時間: {elapsed}, 終了コード: {proc.returncode})"
-                        )
-                        if proc.returncode == 0:
-                            # 転送対象が残っているかチェック
-                            if is_transfer_remaining():
-                                log_watchdog(
-                                    "転送対象が残っているため、src.mainを再起動します"
-                                )
-                                break  # ループを抜けて再起動
-                            else:
-                                log_watchdog("=== 監視終了（全転送完了） ===")
-                                return
-                        break
-
-                    # ログファイルの更新チェック
-                    current_mtime = get_log_mtime()
-                    current_time = time.time()
-
-                    if current_mtime > last_mtime:
-                        # ログが更新された
-                        last_mtime = current_mtime
-                        last_check_time = current_time
-                        continue
-
-                    # タイムアウトチェック
-                    idle_time = current_time - last_check_time
-                    if idle_time > (TIMEOUT_MINUTES * 60):
-                        elapsed = format_time_diff(time.time() - start_time)
-                        idle_formatted = format_time_diff(idle_time)
-
-                        log_watchdog(
-                            f"!!! フリーズ検出 !!! (稼働時間: {elapsed}, 無応答時間: {idle_formatted})"
-                        )
-
-                        # 直前のログを記録
-                        tail_lines = get_tail_lines(MAIN_LOG_PATH, TAIL_LINES)
-                        if tail_lines:
-                            log_watchdog("=== 直前のログ ===")
-                            for line in tail_lines:
-                                log_watchdog(f"  {line.rstrip()}")
-                            log_watchdog("=== 直前のログ終了 ===")
-
-                        # プロセス強制終了
-                        log_watchdog(f"src.main強制終了中... (PID: {proc.pid})")
-                        proc.terminate()
-
-                        try:
-                            proc.wait(timeout=10)
-                            log_watchdog("src.main正常終了")
-                        except subprocess.TimeoutExpired:
-                            log_watchdog("強制終了タイムアウト、KILL送信")
-                            proc.kill()
-                            proc.wait()
-                            log_watchdog("src.mainをKILLしました")
-
-                        restart_count += 1
-                        log_watchdog(
-                            f"自動再起動準備中... (累計再起動回数: {restart_count})"
-                        )
-                        break
+            restart_count += 1
+            log_watchdog(f"自動再起動準備中... (累計再起動回数: {restart_count})")
 
             # 短時間での連続再起動を防ぐ
             if time.time() - start_time < 60:
@@ -210,15 +245,7 @@ def main():
                 time.sleep(5)
 
     except KeyboardInterrupt:
-        log_watchdog("監視停止要求を受信")
-        if "proc" in locals() and proc.poll() is None:
-            log_watchdog("src.mainを停止中...")
-            proc.terminate()
-            try:
-                proc.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-        log_watchdog("=== 監視終了 ===")
+        _handle_keyboard_interrupt(proc)
 
 
 if __name__ == "__main__":

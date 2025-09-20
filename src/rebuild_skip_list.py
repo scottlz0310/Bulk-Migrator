@@ -13,9 +13,12 @@ from dotenv import load_dotenv
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
 load_dotenv(env_path, override=False)
 
+# パス調整を最初に実行
 sys.path.insert(0, os.path.dirname(__file__))
-from structured_logger import get_structured_logger
-from transfer import GraphTransferClient
+
+# ローカルモジュールのインポート
+from structured_logger import get_structured_logger  # noqa: E402
+from transfer import GraphTransferClient  # noqa: E402
 
 
 def crawl_sharepoint():

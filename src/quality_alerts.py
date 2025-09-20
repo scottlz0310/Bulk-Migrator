@@ -125,7 +125,11 @@ class QualityAlertSystem:
                 QualityAlert(
                     alert_type="coverage",
                     severity="HIGH",
-                    message=f"カバレッジが閾値を下回りました: {metrics.coverage_percentage:.1f}% < {self.thresholds.coverage_minimum}%",
+                    message=(
+                        f"カバレッジが閾値を下回りました: "
+                        f"{metrics.coverage_percentage:.1f}% < "
+                        f"{self.thresholds.coverage_minimum}%"
+                    ),
                     current_value=metrics.coverage_percentage,
                     threshold_value=self.thresholds.coverage_minimum,
                     timestamp=metrics.timestamp,
@@ -138,7 +142,11 @@ class QualityAlertSystem:
                 QualityAlert(
                     alert_type="lint_errors",
                     severity="MEDIUM",
-                    message=f"リンティングエラーが閾値を超えました: {metrics.lint_errors}件 > {self.thresholds.max_lint_errors}件",
+                    message=(
+                        f"リンティングエラーが閾値を超えました: "
+                        f"{metrics.lint_errors}件 > "
+                        f"{self.thresholds.max_lint_errors}件"
+                    ),
                     current_value=metrics.lint_errors,
                     threshold_value=self.thresholds.max_lint_errors,
                     timestamp=metrics.timestamp,
@@ -151,7 +159,11 @@ class QualityAlertSystem:
                 QualityAlert(
                     alert_type="type_errors",
                     severity="MEDIUM",
-                    message=f"型チェックエラーが閾値を超えました: {metrics.type_errors}件 > {self.thresholds.max_type_errors}件",
+                    message=(
+                        f"型チェックエラーが閾値を超えました: "
+                        f"{metrics.type_errors}件 > "
+                        f"{self.thresholds.max_type_errors}件"
+                    ),
                     current_value=metrics.type_errors,
                     threshold_value=self.thresholds.max_type_errors,
                     timestamp=metrics.timestamp,
@@ -167,7 +179,11 @@ class QualityAlertSystem:
                 QualityAlert(
                     alert_type="security_vulnerabilities",
                     severity="HIGH",
-                    message=f"セキュリティ脆弱性が検出されました: {metrics.security_vulnerabilities}件 > {self.thresholds.max_security_vulnerabilities}件",
+                    message=(
+                        f"セキュリティ脆弱性が検出されました: "
+                        f"{metrics.security_vulnerabilities}件 > "
+                        f"{self.thresholds.max_security_vulnerabilities}件"
+                    ),
                     current_value=metrics.security_vulnerabilities,
                     threshold_value=self.thresholds.max_security_vulnerabilities,
                     timestamp=metrics.timestamp,
@@ -180,7 +196,11 @@ class QualityAlertSystem:
                 QualityAlert(
                     alert_type="failed_tests",
                     severity="HIGH",
-                    message=f"テスト失敗が発生しました: {metrics.failed_tests}件 > {self.thresholds.max_failed_tests}件",
+                    message=(
+                        f"テスト失敗が発生しました: "
+                        f"{metrics.failed_tests}件 > "
+                        f"{self.thresholds.max_failed_tests}件"
+                    ),
                     current_value=metrics.failed_tests,
                     threshold_value=self.thresholds.max_failed_tests,
                     timestamp=metrics.timestamp,

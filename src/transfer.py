@@ -25,6 +25,22 @@ except ImportError:
     def get_large_file_threshold_mb() -> int:
         return 4
 
+
+def _build_onedrive_download_url(
+    base_url: str, encoded_path: str, onedrive_drive_id: str | None = None
+) -> str:
+    """OneDriveダウンロードURL構築のヘルパー関数"""
+    if onedrive_drive_id and onedrive_drive_id.strip():
+        return (
+            f"{base_url}/drives/{onedrive_drive_id}" f"/root:/{encoded_path}:/content"
+        )
+    else:
+        user_principal = os.getenv("SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME")
+        return (
+            f"{base_url}/users/{user_principal}" f"/drive/root:/{encoded_path}:/content"
+        )
+
+
 # OneDrive/SharePoint ディレクトリ再帰取得・転送ロジック雛形
 
 
@@ -100,7 +116,8 @@ class GraphTransferClient:
                     )
             else:
                 raise Exception(
-                    f"ファイル情報の取得に失敗しました: {file_resp.status_code} - {file_resp.text}"
+                    f"ファイル情報の取得に失敗しました: "
+                    f"{file_resp.status_code} - {file_resp.text}"
                 )
         else:
             # フォールバック: 従来のパスベース方式
@@ -111,9 +128,13 @@ class GraphTransferClient:
             )
 
             if onedrive_drive_id:
-                download_url = f"{self.base_url}/drives/{onedrive_drive_id}/root:/{encoded_path}:/content"
+                download_url = _build_onedrive_download_url(
+                    self.base_url, encoded_path, onedrive_drive_id
+                )
             else:
-                download_url = f"{self.base_url}/users/{os.getenv('SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME')}/drive/root:/{encoded_path}:/content"
+                download_url = _build_onedrive_download_url(
+                    self.base_url, encoded_path, onedrive_drive_id
+                )
 
             logger = get_structured_logger("transfer")
             logger.debug("OneDrive download_url", download_url=download_url)
@@ -131,7 +152,10 @@ class GraphTransferClient:
         if dst_dir and dst_dir != dst_root:
             self.ensure_sharepoint_folder(dst_dir)
 
-        upload_url = f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}/root:/{dst_path}:/content"
+        upload_url = (
+            f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}"
+            f"/root:/{dst_path}:/content"
+        )
 
         # PUTでストリーミングアップロード
         put_resp = requests.put(
@@ -207,9 +231,8 @@ class GraphTransferClient:
 
                     # 1000件ごとに進捗ログを出力
                     if len(file_targets) % 1000 == 0:
-                        from src.logger import logger
-
-                        logger.info(
+                        progress_logger = get_structured_logger("transfer")
+                        progress_logger.info(
                             f"OneDriveクロール進捗: {len(file_targets)}ファイル処理済み"
                         )
 
@@ -411,7 +434,10 @@ class GraphTransferClient:
             )
 
             # フォルダの存在確認
-            check_url = f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}/root:/{current_path}"
+            check_url = (
+                f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}"
+                f"/root:/{current_path}"
+            )
             try:
                 resp = requests.get(check_url, headers=self._headers())
                 if resp.status_code == 404:
@@ -489,7 +515,10 @@ class GraphTransferClient:
         """
         SharePointアップロードセッションを作成
         """
-        session_url = f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}/root:/{dst_path}:/createUploadSession"
+        session_url = (
+            f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}"
+            f"/root:/{dst_path}:/createUploadSession"
+        )
 
         payload = {
             "item": {
@@ -529,7 +558,8 @@ class GraphTransferClient:
                     )
             else:
                 raise Exception(
-                    f"ファイル情報の取得に失敗しました: {file_resp.status_code} - {file_resp.text}"
+                    f"ファイル情報の取得に失敗しました: "
+                    f"{file_resp.status_code} - {file_resp.text}"
                 )
         else:
             # フォールバック: 従来のパスベース方式
@@ -541,9 +571,13 @@ class GraphTransferClient:
             )
 
             if onedrive_drive_id:
-                download_url = f"{self.base_url}/drives/{onedrive_drive_id}/root:/{encoded_path}:/content"
+                download_url = _build_onedrive_download_url(
+                    self.base_url, encoded_path, onedrive_drive_id
+                )
             else:
-                download_url = f"{self.base_url}/users/{os.getenv('SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME')}/drive/root:/{encoded_path}:/content"
+                download_url = _build_onedrive_download_url(
+                    self.base_url, encoded_path, onedrive_drive_id
+                )
 
             resp = requests.get(
                 download_url, headers=self._headers(), stream=True, timeout=timeout

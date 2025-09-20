@@ -1,5 +1,40 @@
+import argparse
+import json
+import os
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import requests
 import urllib3
+from dotenv import load_dotenv
+
+# プロジェクトルートの.envを必ず読み込む（OS環境変数優先、なければ.env）
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+load_dotenv(env_path, override=False)
+
+# パス調整を最初に実行
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+
+# ローカルモジュールのインポート
+from config_manager import (  # noqa: E402
+    get_config,
+    get_onedrive_files_path,
+    get_sharepoint_current_files_path,
+    get_skip_list_path,
+)
+from logger import (  # noqa: E402
+    log_transfer_error,
+    log_transfer_start,
+    log_transfer_success,
+)
+from rebuild_skip_list import (  # noqa: E402
+    crawl_sharepoint,
+    create_skip_list_from_sharepoint,
+)
+from skiplist import add_to_skip_list, is_skipped, load_skip_list  # noqa: E402
+from structured_logger import get_structured_logger  # noqa: E402
+from transfer import GraphTransferClient  # noqa: E402
 
 
 def retry_with_backoff(func, max_retries=3, wait_sec=10, *args, **kwargs):
@@ -22,42 +57,8 @@ def retry_with_backoff(func, max_retries=3, wait_sec=10, *args, **kwargs):
             )
             if attempt == max_retries:
                 raise
-            import time
-
             time.sleep(wait_sec)
 
-
-import argparse
-import os
-import sys
-
-from dotenv import load_dotenv
-
-# プロジェクトルートの.envを必ず読み込む（OS環境変数優先、なければ.env）
-env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
-load_dotenv(env_path, override=False)
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-import json
-import os
-import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-from config_manager import (
-    get_config,
-    get_onedrive_files_path,
-    get_sharepoint_current_files_path,
-    get_skip_list_path,
-)
-from logger import (
-    log_transfer_error,
-    log_transfer_start,
-    log_transfer_success,
-)
-from rebuild_skip_list import crawl_sharepoint, create_skip_list_from_sharepoint
-from skiplist import add_to_skip_list, is_skipped, load_skip_list
-from structured_logger import get_structured_logger
-from transfer import GraphTransferClient
 
 # 設定読み込み
 with open("config/config.json", encoding="utf-8") as f:
@@ -69,7 +70,14 @@ def get_current_config_hash():
     import hashlib
 
     # 重要な環境変数と設定を文字列として結合
-    config_string = f"{os.getenv('SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME')}|{os.getenv('SOURCE_ONEDRIVE_FOLDER_PATH')}|{os.getenv('DESTINATION_SHAREPOINT_SITE_ID')}|{os.getenv('DESTINATION_SHAREPOINT_DRIVE_ID')}|{os.getenv('DESTINATION_SHAREPOINT_DOCLIB')}"
+    config_parts = [
+        os.getenv("SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME"),
+        os.getenv("SOURCE_ONEDRIVE_FOLDER_PATH"),
+        os.getenv("DESTINATION_SHAREPOINT_SITE_ID"),
+        os.getenv("DESTINATION_SHAREPOINT_DRIVE_ID"),
+        os.getenv("DESTINATION_SHAREPOINT_DOCLIB"),
+    ]
+    config_string = "|".join(str(part) for part in config_parts)
 
     return hashlib.md5(config_string.encode()).hexdigest()
 
@@ -288,9 +296,15 @@ def run_transfer(onedrive_files=None):
     ):
         structured_logger = get_structured_logger("main")
         structured_logger.error("必要な環境変数が設定されていません")
-        structured_logger.error(
-            "必要な環境変数: CLIENT_ID, CLIENT_SECRET, TENANT_ID, DESTINATION_SHAREPOINT_SITE_ID, DESTINATION_SHAREPOINT_DRIVE_ID, SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME"
-        )
+        required_vars = [
+            "CLIENT_ID",
+            "CLIENT_SECRET",
+            "TENANT_ID",
+            "DESTINATION_SHAREPOINT_SITE_ID",
+            "DESTINATION_SHAREPOINT_DRIVE_ID",
+            "SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME",
+        ]
+        structured_logger.error(f"必要な環境変数: {', '.join(required_vars)}")
         return
 
     # 転送クライアント初期化
