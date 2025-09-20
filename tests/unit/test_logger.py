@@ -227,18 +227,17 @@ class TestSecureLogger:
         with tempfile.TemporaryDirectory() as temp_dir:
             log_path = os.path.join(temp_dir, "test.log")
             secure_logger = SecureLogger("test_logger", log_path)
-
-            # モックロガーを設定
-            secure_logger.logger = MagicMock()
-
-            secure_logger.log_transfer_start(self.test_file_info)
-            secure_logger.log_transfer_success(self.test_file_info, elapsed=1.5)
-            secure_logger.log_transfer_error(
-                self.test_file_info, "Test error", retry_count=2
-            )
-            secure_logger.log_transfer_skip(self.test_file_info)
-
             try:
+                # モックロガーを設定
+                secure_logger.logger = MagicMock()
+
+                secure_logger.log_transfer_start(self.test_file_info)
+                secure_logger.log_transfer_success(self.test_file_info, elapsed=1.5)
+                secure_logger.log_transfer_error(
+                    self.test_file_info, "Test error", retry_count=2
+                )
+                secure_logger.log_transfer_skip(self.test_file_info)
+
                 # ログメソッドが呼び出されたことを確認
                 assert secure_logger.logger.log.call_count == 4
             finally:
@@ -251,28 +250,27 @@ class TestSecureLogger:
         with tempfile.TemporaryDirectory() as temp_dir:
             log_path = os.path.join(temp_dir, "test.log")
             secure_logger = SecureLogger("test_logger", log_path)
-
-            # モックロガーを設定
-            secure_logger.logger = MagicMock()
-
-            # 機密情報を含む詳細情報
-            auth_details = {
-                "client_id": "test_client_id",
-                "client_secret": "secret123",
-                "tenant_id": "tenant456",
-                "scope": "https://graph.microsoft.com/.default",
-            }
-
-            secure_logger.log_auth_event("Token acquired", auth_details)
-
-            # ログメソッドが呼び出されたことを確認
-            secure_logger.logger.log.assert_called_once()
-
-            # 呼び出された引数を確認
-            call_args = secure_logger.logger.log.call_args
-            logged_message = call_args[0][1]  # メッセージ部分
-
             try:
+                # モックロガーを設定
+                secure_logger.logger = MagicMock()
+
+                # 機密情報を含む詳細情報
+                auth_details = {
+                    "client_id": "test_client_id",
+                    "client_secret": "secret123",
+                    "tenant_id": "tenant456",
+                    "scope": "https://graph.microsoft.com/.default",
+                }
+
+                secure_logger.log_auth_event("Token acquired", auth_details)
+
+                # ログメソッドが呼び出されたことを確認
+                secure_logger.logger.log.assert_called_once()
+
+                # 呼び出された引数を確認
+                call_args = secure_logger.logger.log.call_args
+                logged_message = call_args[0][1]  # メッセージ部分
+
                 # 機密情報がマスクされていることを確認
                 assert "[MASKED]" in logged_message
                 assert "secret123" not in logged_message
@@ -288,13 +286,12 @@ class TestSecureLogger:
         with tempfile.TemporaryDirectory() as temp_dir:
             log_path = os.path.join(temp_dir, "test.log")
             secure_logger = SecureLogger("test_logger", log_path)
-
-            # モックロガーを設定
-            secure_logger.logger = MagicMock()
-
-            secure_logger.log_auth_event("Authentication started")
-
             try:
+                # モックロガーを設定
+                secure_logger.logger = MagicMock()
+
+                secure_logger.log_auth_event("Authentication started")
+
                 # ログメソッドが呼び出されたことを確認
                 secure_logger.logger.log.assert_called_once()
             finally:
