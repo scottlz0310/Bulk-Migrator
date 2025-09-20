@@ -3,6 +3,7 @@
 """
 
 import json
+import subprocess
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
@@ -166,6 +167,65 @@ class TestQualityMetricsCollector:
         assert result == 0.0
 
     @patch("subprocess.run")
+    def test_collect_coverage_metrics_timeout(self, mock_run, collector):
+        """カバレッジメトリクス収集タイムアウトテスト"""
+        # 検証対象: QualityMetricsCollector.collect_coverage_metrics()
+        # のタイムアウト例外処理
+        # 目的: タイムアウト時に0.0が返されることを確認
+
+        mock_run.side_effect = subprocess.TimeoutExpired("pytest", 30)
+
+        result = collector.collect_coverage_metrics()
+
+        assert result == 0.0
+
+    @patch("subprocess.run")
+    def test_collect_coverage_metrics_subprocess_error(self, mock_run, collector):
+        """カバレッジメトリクス収集サブプロセスエラーテスト"""
+        # 検証対象: QualityMetricsCollector.collect_coverage_metrics()
+        # のサブプロセス例外処理
+        # 目的: サブプロセスエラー時に0.0が返されることを確認
+
+        mock_run.side_effect = subprocess.SubprocessError("Process failed")
+
+        result = collector.collect_coverage_metrics()
+
+        assert result == 0.0
+
+    @patch("subprocess.run")
+    def test_collect_coverage_metrics_file_not_found(self, mock_run, collector):
+        """カバレッジメトリクス収集ファイル未存在テスト"""
+        # 検証対象: QualityMetricsCollector.collect_coverage_metrics()
+        # のファイル未存在例外処理
+        # 目的: ファイル未存在時に0.0が返されることを確認
+
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        result = collector.collect_coverage_metrics()
+
+        assert result == 0.0
+
+    @patch("subprocess.run")
+    def test_collect_coverage_metrics_json_decode_error(
+        self, mock_run, collector, temp_project_root
+    ):
+        """カバレッジメトリクス収集JSON解析エラーテスト"""
+        # 検証対象: QualityMetricsCollector.collect_coverage_metrics()
+        # のJSON解析例外処理
+        # 目的: JSON解析エラー時に0.0が返されることを確認
+
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+        # 不正なJSONファイルを作成
+        coverage_file = temp_project_root / "coverage.json"
+        with open(coverage_file, "w") as f:
+            f.write("invalid json content")
+
+        result = collector.collect_coverage_metrics()
+
+        assert result == 0.0
+
+    @patch("subprocess.run")
     def test_collect_lint_metrics(self, mock_run, collector):
         """リンティングメトリクス収集テスト"""
         # 検証対象: QualityMetricsCollector.collect_lint_metrics()
@@ -183,6 +243,105 @@ class TestQualityMetricsCollector:
         result = collector.collect_lint_metrics()
 
         assert result == 2
+
+    @patch("subprocess.run")
+    def test_collect_lint_metrics_timeout(self, mock_run, collector):
+        """リンティングメトリクス収集タイムアウトテスト"""
+        # 検証対象: QualityMetricsCollector.collect_lint_metrics()
+        # のタイムアウト例外処理
+        # 目的: タイムアウト時に0が返されることを確認
+
+        mock_run.side_effect = subprocess.TimeoutExpired("ruff", 30)
+
+        result = collector.collect_lint_metrics()
+
+        assert result == 0
+
+    @patch("subprocess.run")
+    def test_collect_lint_metrics_json_error(self, mock_run, collector):
+        """リンティングメトリクス収集JSON解析エラーテスト"""
+        # 検証対象: QualityMetricsCollector.collect_lint_metrics()
+        # のJSON解析例外処理
+        # 目的: JSON解析エラー時に0が返されることを確認
+
+        mock_run.return_value = MagicMock(
+            returncode=1, stdout="invalid json", stderr=""
+        )
+
+        result = collector.collect_lint_metrics()
+
+        assert result == 0
+
+    @patch("subprocess.run")
+    def test_collect_type_check_metrics_timeout(self, mock_run, collector):
+        """型チェックメトリクス収集タイムアウトテスト"""
+        # 検証対象: QualityMetricsCollector.collect_type_check_metrics()
+        # のタイムアウト例外処理
+        # 目的: タイムアウト時に0が返されることを確認
+
+        mock_run.side_effect = subprocess.TimeoutExpired("mypy", 30)
+
+        result = collector.collect_type_check_metrics()
+
+        assert result == 0
+
+    @patch("subprocess.run")
+    def test_collect_security_metrics_timeout(self, mock_run, collector):
+        """セキュリティメトリクス収集タイムアウトテスト"""
+        # 検証対象: QualityMetricsCollector.collect_security_metrics()
+        # のタイムアウト例外処理
+        # 目的: タイムアウト時に0が返されることを確認
+
+        mock_run.side_effect = subprocess.TimeoutExpired("bandit", 30)
+
+        result = collector.collect_security_metrics()
+
+        assert result == 0
+
+    @patch("subprocess.run")
+    def test_collect_security_metrics_json_error(self, mock_run, collector):
+        """セキュリティメトリクス収集JSON解析エラーテスト"""
+        # 検証対象: QualityMetricsCollector.collect_security_metrics()
+        # のJSON解析例外処理
+        # 目的: JSON解析エラー時に0が返されることを確認
+
+        mock_run.return_value = MagicMock(
+            returncode=1, stdout="invalid json", stderr=""
+        )
+
+        result = collector.collect_security_metrics()
+
+        assert result == 0
+
+    @patch("subprocess.run")
+    def test_collect_test_metrics_timeout(self, mock_run, collector):
+        """テストメトリクス収集タイムアウトテスト"""
+        # 検証対象: QualityMetricsCollector.collect_test_metrics()
+        # のタイムアウト例外処理
+        # 目的: タイムアウト時に(0, 0)が返されることを確認
+
+        mock_run.side_effect = subprocess.TimeoutExpired("pytest", 30)
+
+        total, failed = collector.collect_test_metrics()
+
+        assert total == 0
+        assert failed == 0
+
+    @patch("subprocess.run")
+    def test_collect_test_metrics_no_match(self, mock_run, collector):
+        """テストメトリクス収集パターン不一致テスト"""
+        # 検証対象: QualityMetricsCollector.collect_test_metrics()
+        # のパターン不一致処理
+        # 目的: パターンが一致しない場合に(0, 0)が返されることを確認
+
+        mock_run.return_value = MagicMock(
+            returncode=0, stdout="no test results", stderr=""
+        )
+
+        total, failed = collector.collect_test_metrics()
+
+        assert total == 0
+        assert failed == 0
 
     @patch("subprocess.run")
     def test_collect_type_check_metrics(self, mock_run, collector):
@@ -316,3 +475,91 @@ class TestQualityMetricsCollector:
 
         assert comparison["status"] == "初回測定"
         assert comparison["changes"] == {}
+
+    @patch.object(QualityMetricsCollector, "collect_coverage_metrics")
+    @patch.object(QualityMetricsCollector, "collect_lint_metrics")
+    @patch.object(QualityMetricsCollector, "collect_type_check_metrics")
+    @patch.object(QualityMetricsCollector, "collect_security_metrics")
+    @patch.object(QualityMetricsCollector, "collect_test_metrics")
+    def test_collect_all_metrics(
+        self, mock_test, mock_security, mock_type, mock_lint, mock_coverage, collector
+    ):
+        """全メトリクス収集テスト"""
+        # 検証対象: QualityMetricsCollector.collect_all_metrics()
+        # 目的: 全てのメトリクスが正常に収集されることを確認
+
+        mock_coverage.return_value = 85.0
+        mock_lint.return_value = 2
+        mock_type.return_value = 1
+        mock_security.return_value = 0
+        mock_test.return_value = (50, 1)
+
+        metrics = collector.collect_all_metrics()
+
+        assert metrics.coverage_percentage == 85.0
+        assert metrics.lint_errors == 2
+        assert metrics.type_errors == 1
+        assert metrics.security_vulnerabilities == 0
+        assert metrics.test_count == 50
+        assert metrics.failed_tests == 1
+        assert isinstance(metrics.timestamp, datetime)
+
+    def test_load_metrics_file_not_found(self, collector):
+        """メトリクス読み込みファイル未存在テスト"""
+        # 検証対象: QualityMetricsCollector.load_metrics()
+        # のファイル未存在処理
+        # 目的: ファイルが存在しない場合にNoneが返されることを確認
+
+        result = collector.load_metrics("nonexistent_file.json")
+
+        assert result is None
+
+    def test_load_metrics_json_error(self, collector, temp_project_root):
+        """メトリクス読み込みJSON解析エラーテスト"""
+        # 検証対象: QualityMetricsCollector.load_metrics()
+        # のJSON解析例外処理
+        # 目的: JSON解析エラー時にNoneが返されることを確認
+
+        # 不正なJSONファイルを作成
+        metrics_dir = temp_project_root / "quality_reports"
+        metrics_dir.mkdir(exist_ok=True)
+        invalid_file = metrics_dir / "invalid.json"
+        with open(invalid_file, "w") as f:
+            f.write("invalid json content")
+
+        result = collector.load_metrics("invalid.json")
+
+        assert result is None
+
+    def test_compare_metrics_degradation(self, collector):
+        """メトリクス比較（劣化）テスト"""
+        # 検証対象: QualityMetricsCollector.compare_metrics()
+        # 目的: メトリクスの劣化が正しく検出されることを確認
+
+        previous = QualityMetrics(
+            timestamp=datetime(2024, 1, 1, tzinfo=UTC),
+            coverage_percentage=90.0,
+            lint_errors=0,
+            type_errors=0,
+            security_vulnerabilities=0,
+            test_count=50,
+            failed_tests=0,
+        )
+
+        current = QualityMetrics(
+            timestamp=datetime(2024, 1, 2, tzinfo=UTC),
+            coverage_percentage=75.0,
+            lint_errors=5,
+            type_errors=3,
+            security_vulnerabilities=2,
+            test_count=45,
+            failed_tests=3,
+        )
+
+        comparison = collector.compare_metrics(current, previous)
+
+        assert comparison["status"] == "比較完了"
+        assert comparison["changes"]["coverage"] == -15.0
+        assert comparison["changes"]["lint_errors"] == 5
+        assert len(comparison["regressions"]) > 0
+        assert comparison["overall_trend"] == "悪化"

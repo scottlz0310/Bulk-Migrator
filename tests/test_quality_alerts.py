@@ -377,3 +377,145 @@ class TestQualityAlertSystem:
 
         assert data["report_type"] == "monthly"
         assert data["metrics_summary"]["test"] == "data"
+
+    def test_generate_quarterly_report(self, alert_system, temp_project_root):
+        """四半期レポート生成のテスト"""
+        # 検証対象: QualityAlertSystem.generate_quarterly_report()
+        # 目的: 四半期レポートが正しく生成されることを確認
+
+        # テスト用メトリクスファイルを作成
+        quality_reports_dir = temp_project_root / "quality_reports"
+        quality_reports_dir.mkdir(exist_ok=True)
+
+        test_metrics = {
+            "timestamp": "2024-02-15T12:00:00+00:00",
+            "coverage": 80.0,
+            "lint_errors": 3,
+            "type_errors": 2,
+            "security_issues": 1,
+        }
+
+        with open(
+            quality_reports_dir / "quality_metrics_20240215_120000.json", "w"
+        ) as f:
+            json.dump(test_metrics, f)
+
+        # 2024年Q1のレポートを生成
+        target_quarter = (2024, 1)  # (year, quarter)
+        report = alert_system.generate_quarterly_report(target_quarter)
+
+        assert report.report_type == "quarterly"
+        assert report.period_start.month == 1
+        assert report.period_end.month == 3
+
+    def test_generate_semi_annual_report(self, alert_system, temp_project_root):
+        """半年レポート生成のテスト"""
+        # 検証対象: QualityAlertSystem.generate_semi_annual_report()
+        # 目的: 半年レポートが正しく生成されることを確認
+
+        # テスト用メトリクスファイルを作成
+        quality_reports_dir = temp_project_root / "quality_reports"
+        quality_reports_dir.mkdir(exist_ok=True)
+
+        test_metrics = {
+            "timestamp": "2024-04-15T12:00:00+00:00",
+            "coverage": 75.0,
+            "lint_errors": 4,
+            "type_errors": 3,
+            "security_issues": 2,
+        }
+
+        with open(
+            quality_reports_dir / "quality_metrics_20240415_120000.json", "w"
+        ) as f:
+            json.dump(test_metrics, f)
+
+        # 2024年上半期のレポートを生成
+        target_half = (2024, 1)  # (year, half)
+        report = alert_system.generate_semi_annual_report(target_half)
+
+        assert report.report_type == "semi-annual"
+        assert report.period_start.month == 1
+        assert report.period_end.month == 6
+
+    def test_send_alert_email_no_smtp(self, alert_system):
+        """アラートメール送信（SMTP未設定）のテスト"""
+        # 検証対象: QualityAlertSystem.send_alert_email()
+        # 目的: SMTP未設定時の処理確認
+
+        alerts = [
+            QualityAlert(
+                alert_type="coverage",
+                severity="HIGH",
+                message="テストアラート",
+                current_value=45.0,
+                threshold_value=60.0,
+                timestamp=datetime.now(UTC),
+            )
+        ]
+
+        # SMTP設定なしでメール送信を試行（例外が発生しないことを確認）
+        try:
+            alert_system.send_alert_email(alerts)
+        except Exception as e:
+            # SMTP設定がない場合の例外は想定内
+            assert "SMTP" in str(e) or "email" in str(e).lower()
+
+    def test_calculate_trends_empty_data(self, alert_system):
+        """トレンド計算（データなし）のテスト"""
+        # 検証対象: QualityAlertSystem._calculate_trends()
+        # 目的: データがない場合の処理確認
+
+        trends = alert_system._calculate_trends([])
+
+        assert "message" in trends
+        assert "最低2つのデータポイントが必要" in trends["message"]
+
+    def test_calculate_trends_single_data_point(self, alert_system):
+        """トレンド計算（単一データ）のテスト"""
+        # 検証対象: QualityAlertSystem._calculate_trends()
+        # 目的: データが1つの場合の処理確認
+
+        data = [{"coverage": 85.0, "lint_errors": 2}]
+        trends = alert_system._calculate_trends(data)
+
+        assert "message" in trends
+        assert "最低2つのデータポイントが必要" in trends["message"]
+
+    def test_generate_recommendations_no_issues(self, alert_system):
+        """推奨事項生成（問題なし）のテスト"""
+        # 検証対象: QualityAlertSystem._generate_recommendations()
+        # 目的: 問題がない場合の推奨事項確認
+
+        summary = {
+            "coverage": {"latest": 90.0},
+            "lint_errors": {"latest": 0},
+            "type_errors": {"latest": 0},
+            "security_issues": {"latest": 0},
+        }
+
+        trends = {"coverage_trend": 5.0, "lint_errors_trend": 0}
+
+        recommendations = alert_system._generate_recommendations(summary, trends)
+
+        assert len(recommendations) > 0
+        assert len(recommendations) >= 0  # 推奨事項が生成されることを確認
+
+    def test_calculate_metrics_summary_empty_data(self, alert_system):
+        """メトリクス要約計算（データなし）のテスト"""
+        # 検証対象: QualityAlertSystem._calculate_metrics_summary()
+        # 目的: データがない場合の処理確認
+
+        summary = alert_system._calculate_metrics_summary([])
+
+        assert summary == {}  # 空のデータの場合は空の辞書が返される
+
+    def test_create_alert_email_body_empty_alerts(self, alert_system):
+        """アラートメール本文作成（アラートなし）のテスト"""
+        # 検証対象: QualityAlertSystem._create_alert_email_body()
+        # 目的: アラートがない場合の処理確認
+
+        body = alert_system._create_alert_email_body([])
+
+        assert "品質アラート通知" in body
+        assert "アラート数: 0件" in body
