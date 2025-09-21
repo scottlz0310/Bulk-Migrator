@@ -4,6 +4,15 @@
 
 ---
 
+
+## [2.3.2] - 2025-09-21
+
+### 変更内容
+
+- chore: update changelog for v2.3.1 (b3f532b)
+- fix: update prepare-release workflow to use Python 3.13 (804dadc)
+- docs: update documentation for v2.3.1 (c40b1ad)
+
 **完全な変更履歴**: https://github.com/scottlz0310/Bulk-Migrator/compare/v2.3.1...v2.3.1
 
 
