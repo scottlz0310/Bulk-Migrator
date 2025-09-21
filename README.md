@@ -1,5 +1,9 @@
 # Bulk-Migration
 
+![Version](https://img.shields.io/badge/version-2.3.0-blue)
+![Python](https://img.shields.io/badge/python-3.13+-green)
+![License](https://img.shields.io/badge/license-Private-red)
+
 組織用 OneDrive から SharePoint への大容量ファイル転送自動化スクリプト
 
 ## 概要
