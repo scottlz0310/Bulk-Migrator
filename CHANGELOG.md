@@ -5,6 +5,17 @@
 ---
 
 
+## [2.3.3] - 2025-09-21
+
+### 変更内容
+
+- feat: CodeQLを手動実行のみに変更してパフォーマンス最適化 (380b2e0)
+- feat: pre-commitでfail_fast設定を追加 (dd2cfce)
+- fix: CodeQL Docker権限問題を修正し並行処理を最適化 (10a7d73)
+- feat: CodeQLスキャニングスクリプトにWSLサポートを追加し、エラー処理を強化 (f4b4e81)
+- feat: add CodeQL pre-commit hook with Docker support (942360a)
+
+
 ## [2.3.2] - 2025-09-21
 
 ### 変更内容
