@@ -139,6 +139,10 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          
+          # main ブランチに切り替え
+          git checkout main
+          
           git add CHANGELOG.md README.md
           if git diff --staged --quiet; then
             echo "ドキュメントに変更はありません"
