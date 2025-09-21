@@ -108,7 +108,8 @@ class TestSecurityScanner:
         # 検証対象: SecurityScanner.run_pip_audit()
         # 目的: pip-auditスキャンでエラーが発生した場合の処理を確認
 
-        mock_subprocess.return_value = MagicMock(returncode=1, stderr="audit error")
+        # 終了コード 2 以上でエラーとして処理される
+        mock_subprocess.return_value = MagicMock(returncode=2, stderr="audit error")
 
         result = self.scanner.run_pip_audit()
 
