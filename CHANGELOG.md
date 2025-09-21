@@ -1,4 +1,11 @@
-# Changelog
+## [2.3.0] - 2025-09-21
+
+
+
+---
+
+**完全な変更履歴**: https://github.com/scottlz0310/Bulk-Migrator/compare/v2.3.0...v2.3.0
+
 
 All notable changes to this project will be documented in this file.
 
