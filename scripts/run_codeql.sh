@@ -28,7 +28,10 @@ mkdir -p codeql-results
 
 # CodeQLデータベース作成とスキャン実行
 echo "📊 CodeQLデータベースを作成中..."
-docker run --rm \
+echo "Command Output:"
+
+# エラー出力をキャプチャして表示
+if ! docker run --rm \
     -v "$PROJECT_ROOT:/workspace" \
     -w /workspace \
     mcr.microsoft.com/cstsectools/codeql-container:latest \
@@ -36,13 +39,19 @@ docker run --rm \
     --language=python \
     --source-root=/workspace/src \
     /workspace/codeql-results/python-db \
-    --overwrite || {
+    --overwrite 2>&1; then
+    echo ""
     echo "⚠️  CodeQLデータベース作成に失敗しました。スキップします。"
+    echo "📝 可能な原因:"
+    echo "   - src/ディレクトリにPythonファイルがない"
+    echo "   - Dockerイメージのダウンロード失敗"
+    echo "   - ネットワーク接続の問題"
+    echo "   - Dockerのメモリ/ディスク容量不足"
     exit 0
-}
+fi
 
 echo "🔍 CodeQLクエリを実行中..."
-docker run --rm \
+if ! docker run --rm \
     -v "$PROJECT_ROOT:/workspace" \
     -w /workspace \
     mcr.microsoft.com/cstsectools/codeql-container:latest \
@@ -50,10 +59,11 @@ docker run --rm \
     /workspace/codeql-results/python-db \
     --format=sarif-latest \
     --output=/workspace/codeql-results/results.sarif \
-    --download || {
+    --download 2>&1; then
+    echo ""
     echo "⚠️  CodeQLクエリ実行に失敗しました。スキップします。"
     exit 0
-}
+fi
 
 # 結果の確認
 if [ -f "codeql-results/results.sarif" ]; then
