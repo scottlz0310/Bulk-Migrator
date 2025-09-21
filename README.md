@@ -1,5 +1,9 @@
 # Bulk-Migration
 
+![Version](https://img.shields.io/badge/version-2.3.1-blue)
+![Python](https://img.shields.io/badge/python-3.13+-green)
+![License](https://img.shields.io/badge/license-Private-red)
+
 組織用 OneDrive から SharePoint への大容量ファイル転送自動化スクリプト
 
 ## 概要
@@ -7,6 +11,7 @@
 - ディレクトリ構造を保持したまま数百GB規模のファイルを安全・効率的に転送
 - Microsoft Graph API を利用し、4MB以上の大容量ファイルはチャンクアップロード対応
 - ログ・インデックス・スキップリストによる堅牢な運用に加え転送失敗時の自動リトライ・進捗監視・自動再起動（watchdog）機能あり
+- **品質向上機能**: 自動リンティング、テストカバレッジ、セキュリティスキャン、構造化ログ対応
 - 利用対象者：SharepontサイトとOndriveを同じ組織上で運用してる管理者またはその権限を有する方
 
 ---
@@ -24,41 +29,133 @@
 
 ## 使い方
 
-1. Python 3.8 以上をインストール
-2. 仮想環境を作成
+### 基本セットアップ
+
+1. **Python 3.11 以上をインストール** (推奨: 3.13)
+2. **uv パッケージマネージャーのインストール**
    ```bash
-   python -m venv venv
+   # Linux/macOS
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+
+   # Windows (PowerShell)
+   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
    ```
-3. 仮想環境を有効化
-   - Linux/macOS:
-     ```bash
-     source venv/bin/activate
-     ```
-   - Windows:
-     ```cmd
-     venv\Scripts\activate
-     ```
-4. 依存関係をインストール
+3. **プロジェクトのセットアップ**
    ```bash
-   pip install -r requirements.txt
+   # 仮想環境の作成
+   uv venv --python 3.13
+
+   # 依存関係のインストール
+   uv sync
+
+   # 環境変数テンプレートのコピー
+   cp sample.env .env
+   # .env を編集して Microsoft Graph API 認証情報を設定
    ```
-5. テストの実行（推奨）
+
+### 開発・品質チェック
+
+4. **テストの実行（推奨）**
    ```bash
-   python run_tests.py
+   # 全テスト実行
+   uv run pytest
+
+   # カバレッジ付きテスト実行
+   uv run pytest --cov=src --cov-report=html
+
+   # 品質チェック
+   uv run ruff check .
+   uv run mypy src/
    ```
-5. `.env` にMicrosoft Graph API認証情報・転送元/先情報を記載※SETUPGUIDE.md参照
-6. 必要に応じて `config/config.json` で詳細設定
-7. キャッシュ情報の消去と再構築※キャッシュ情報やログをを初期化したくなったとき以外はこの項をスキップして通常運用を実行して良い。初回起動を含め設定変更を認識したときやキャッシュが存在しないときは自動でクロールを開始するが、明示的に再構築をしたいときは推奨
+
+### アプリケーション実行
+
+5. **設定ファイルの準備**
+   - `.env` にMicrosoft Graph API認証情報・転送元/先情報を記載（SETUPGUIDE.md参照）
+   - 必要に応じて `config/config.json` で詳細設定
+
+6. **キャッシュ情報の消去と再構築**（初回または設定変更時）
    ```bash
-   python -m src.main --reset
+   uv run python src/main.py --reset
    ```
-8. 通常運用（監視付き）  
+
+7. **通常運用（監視付き）**
    ```bash
-   python src/watchdog.py
+   uv run python src/watchdog.py
+   ```
+
+### 品質管理・監視
+
+8. **品質メトリクスの収集**
+   ```bash
+   # 品質メトリクス収集
+   uv run python src/quality_metrics.py
+
+   # 品質アラートチェック
+   uv run python src/quality_alerts.py --check
+
+   # 月次レポート生成
+   uv run python src/quality_alerts.py --monthly
+   ```
+
+9. **セキュリティスキャン**
+   ```bash
+   # セキュリティスキャン実行
+   uv run python scripts/security_scan.py
    ```
 
 ---
 
+## 品質向上機能
+
+### 自動品質チェック
+
+本プロジェクトでは以下の品質向上機能が導入されています：
+
+#### コード品質
+- **リンティング**: ruff による自動コードフォーマットと静的解析
+- **型チェック**: mypy による型安全性の確保
+- **テストカバレッジ**: pytest-cov による包括的なテストカバレッジ測定
+
+#### セキュリティ
+- **セキュリティスキャン**: bandit による Python セキュリティ脆弱性の自動検出
+- **秘密情報管理**: 機密情報の自動マスキングとログ保護
+- **依存関係監査**: 既知の脆弱性を持つパッケージの検出
+
+#### 監視・ログ
+- **構造化ログ**: JSON 形式による構造化ログ出力
+- **品質メトリクス**: カバレッジ、リンティングエラー、セキュリティ脆弱性の自動収集
+- **アラート機能**: 品質閾値を下回った場合の自動通知
+
+### 開発者向けコマンド
+
+```bash
+# 開発環境のセットアップ
+make bootstrap
+
+# コード品質チェック
+make lint          # リンティング実行
+make format        # コードフォーマット
+make typecheck     # 型チェック
+make test          # テスト実行
+make cov           # カバレッジ付きテスト
+
+# セキュリティチェック
+make security      # セキュリティスキャン
+
+# 全体的な品質チェック
+make quality       # 全ての品質チェックを実行
+```
+
+### CI/CD パイプライン
+
+GitHub Actions により以下が自動実行されます：
+- プルリクエスト時の品質チェック
+- マルチプラットフォーム（Ubuntu/Windows/macOS）でのテスト
+- セキュリティスキャンと脆弱性検出
+- カバレッジレポートの生成
+
+---
 
 ## 設定ファイル
 

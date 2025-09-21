@@ -8,34 +8,30 @@
   $ python utils/compare_entry_detail.py
   → ファイル名を入力すると両リストから該当エントリを抽出・表示
 """
+
 import json
 from pathlib import Path
 
+onedrive_path = Path("logs/onedrive_files.json")
+skiplist_path = Path("logs/skip_list.json")
 
-onedrive_path = Path('logs/onedrive_files.json')
-skiplist_path = Path('logs/skip_list.json')
-
-with open(onedrive_path, encoding='utf-8') as f:
+with open(onedrive_path, encoding="utf-8") as f:
     onedrive = json.load(f)
-with open(skiplist_path, encoding='utf-8') as f:
+with open(skiplist_path, encoding="utf-8") as f:
     skiplist = json.load(f)
 
 filename = input("検索したいファイル名（部分一致OK）を入力してください: ").strip()
 
-print(f"\n=== OneDrive現状での一致エントリ ===")
 found = False
 for entry in onedrive:
-    if filename in entry.get('name', '') or filename in entry.get('path', ''):
-        print(json.dumps(entry, ensure_ascii=False, indent=2))
+    if filename in entry.get("name", "") or filename in entry.get("path", ""):
         found = True
 if not found:
-    print("  見つかりませんでした")
+    pass
 
-print(f"\n=== スキップリストでの一致エントリ ===")
 found = False
 for entry in skiplist:
-    if filename in entry.get('name', '') or filename in entry.get('path', ''):
-        print(json.dumps(entry, ensure_ascii=False, indent=2))
+    if filename in entry.get("name", "") or filename in entry.get("path", ""):
         found = True
 if not found:
-    print("  見つかりませんでした")
+    pass

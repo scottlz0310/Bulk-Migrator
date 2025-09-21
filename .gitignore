@@ -16,6 +16,7 @@ htmlcov/
 .cache/
 *.cover
 .hypothesis/
+pytest-results.xml
 
 # Added by add-autogen-gitignore.ps1 on 2025-09-03T15:56:24.2709987+09:00
 *.py[cod]
@@ -46,6 +47,17 @@ requirements.txt
 .vscode/settings.json
 .vscode/launch.json
 .vscode/tasks.json
+
+# セキュリティレポート
+security_reports/
+vulnerability-report.json
+bandit-report.json
+sbom.json
+codeql-results/
+
+# 品質レポート
+quality_reports/
+coverage.json
 
 # Auto-generated entries from templates
 $RECYCLE.BIN/

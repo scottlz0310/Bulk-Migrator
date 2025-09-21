@@ -1,0 +1,112 @@
+name: 品質チェック
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # 毎日午前2時（UTC）に実行
+    - cron: '0 2 * * *'
+
+jobs:
+  quality-check:
+    name: 品質チェック (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+
+    permissions:
+      contents: read
+      pull-requests: write
+      security-events: write
+      checks: write
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python ${{ matrix.python-version }} セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: uv セットアップ
+        uses: astral-sh/setup-uv@v1
+        with:
+          version: "latest"
+
+      - name: 仮想環境作成
+        run: uv venv --python ${{ matrix.python-version }}
+
+      - name: 依存関係キャッシュ
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-python-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-python-${{ matrix.python-version }}-
+
+      - name: 依存関係インストール
+        run: uv sync
+
+      - name: リンティング (ruff check)
+        run: uv run ruff check .
+        continue-on-error: false
+
+      - name: フォーマットチェック (ruff format)
+        run: uv run ruff format --check .
+        continue-on-error: false
+
+      - name: 型チェック (mypy)
+        run: uv run mypy .
+        continue-on-error: false
+
+      - name: テスト実行とカバレッジ測定
+        run: uv run pytest --cov=src --cov-report=xml --cov-report=term-missing --cov-fail-under=60 --junit-xml=pytest-results.xml
+        continue-on-error: false
+
+      - name: 品質ゲート確認
+        if: always()
+        shell: bash
+        run: |
+          echo "品質チェック結果の確認"
+          if [ "${{ job.status }}" != "success" ]; then
+            echo "❌ 品質チェックが失敗しました。以下を確認してください："
+            echo "  - ruff check でリンティングエラーがないか"
+            echo "  - ruff format でフォーマットが正しいか"
+            echo "  - mypy で型エラーがないか"
+            echo "  - テストカバレッジが60%以上か"
+            exit 1
+          else
+            echo "✅ 全ての品質チェックが通過しました"
+          fi
+
+      - name: カバレッジレポートアップロード
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13' && env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: テスト結果レポート
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        continue-on-error: true
+        with:
+          name: テスト結果 (${{ matrix.os }}, Python ${{ matrix.python-version }})
+          path: pytest-results.xml
+          reporter: java-junit
+          fail-on-error: false
+          fail-on-empty: false

@@ -1,0 +1,175 @@
+name: プルリクエスト品質ゲート
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  quality-gate:
+    name: 品質ゲート確認
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: uv セットアップ
+        uses: astral-sh/setup-uv@v1
+
+      - name: 仮想環境作成と依存関係インストール
+        run: |
+          uv venv --python 3.12
+          uv sync
+
+      - name: 品質チェック実行
+        id: quality_check
+        run: |
+          echo "品質チェックを実行中..."
+
+          # リンティングチェック
+          echo "::group::リンティングチェック"
+          if ! uv run ruff check .; then
+            echo "lint_failed=true" >> $GITHUB_OUTPUT
+            echo "❌ リンティングエラーが検出されました"
+          else
+            echo "✅ リンティングチェック通過"
+          fi
+          echo "::endgroup::"
+
+          # フォーマットチェック
+          echo "::group::フォーマットチェック"
+          if ! uv run ruff format --check .; then
+            echo "format_failed=true" >> $GITHUB_OUTPUT
+            echo "❌ フォーマットエラーが検出されました"
+          else
+            echo "✅ フォーマットチェック通過"
+          fi
+          echo "::endgroup::"
+
+          # 型チェック
+          echo "::group::型チェック"
+          if ! uv run mypy .; then
+            echo "type_failed=true" >> $GITHUB_OUTPUT
+            echo "❌ 型エラーが検出されました"
+          else
+            echo "✅ 型チェック通過"
+          fi
+          echo "::endgroup::"
+
+          # テストとカバレッジ
+          echo "::group::テストとカバレッジ"
+          if ! uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60 --junit-xml=pytest-results.xml; then
+            echo "test_failed=true" >> $GITHUB_OUTPUT
+            echo "❌ テストまたはカバレッジが基準を満たしていません"
+          else
+            echo "✅ テストとカバレッジチェック通過"
+          fi
+          echo "::endgroup::"
+
+      - name: 品質ゲート結果コメント
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { lint_failed, format_failed, type_failed, test_failed } = process.env;
+
+            let comment = '## 🔍 品質チェック結果\n\n';
+            let hasFailures = false;
+
+            // リンティング結果
+            if (lint_failed === 'true') {
+              comment += '❌ **リンティング**: エラーが検出されました\n';
+              comment += '   - `uv run ruff check .` を実行して修正してください\n\n';
+              hasFailures = true;
+            } else {
+              comment += '✅ **リンティング**: 通過\n\n';
+            }
+
+            // フォーマット結果
+            if (format_failed === 'true') {
+              comment += '❌ **フォーマット**: エラーが検出されました\n';
+              comment += '   - `uv run ruff format .` を実行して修正してください\n\n';
+              hasFailures = true;
+            } else {
+              comment += '✅ **フォーマット**: 通過\n\n';
+            }
+
+            // 型チェック結果
+            if (type_failed === 'true') {
+              comment += '❌ **型チェック**: エラーが検出されました\n';
+              comment += '   - `uv run mypy .` を実行して型エラーを修正してください\n\n';
+              hasFailures = true;
+            } else {
+              comment += '✅ **型チェック**: 通過\n\n';
+            }
+
+            // テスト結果
+            if (test_failed === 'true') {
+              comment += '❌ **テスト・カバレッジ**: 基準を満たしていません\n';
+              comment += '   - テストが失敗しているか、カバレッジが60%未満です\n';
+              comment += '   - `uv run pytest --cov=src --cov-report=term-missing` を実行して確認してください\n\n';
+              hasFailures = true;
+            } else {
+              comment += '✅ **テスト・カバレッジ**: 通過（60%以上）\n\n';
+            }
+
+            if (hasFailures) {
+              comment += '---\n';
+              comment += '⚠️ **マージブロック**: 上記の問題を修正してからマージしてください。\n';
+              comment += '\n### 修正手順\n';
+              comment += '1. ローカルで `make lint` または `uv run ruff check .` を実行\n';
+              comment += '2. `make format` または `uv run ruff format .` でフォーマット修正\n';
+              comment += '3. `make typecheck` または `uv run mypy .` で型エラー確認\n';
+              comment += '4. `make test` または `uv run pytest` でテスト実行\n';
+              comment += '5. 修正後にコミット・プッシュ\n';
+            } else {
+              comment += '🎉 **全ての品質チェックが通過しました！マージ可能です。**\n';
+            }
+
+            // 既存のコメントを探して更新、なければ新規作成
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes('🔍 品質チェック結果')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+        env:
+          lint_failed: ${{ steps.quality_check.outputs.lint_failed }}
+          format_failed: ${{ steps.quality_check.outputs.format_failed }}
+          type_failed: ${{ steps.quality_check.outputs.type_failed }}
+          test_failed: ${{ steps.quality_check.outputs.test_failed }}
+
+      - name: 品質ゲート失敗時の終了
+        if: steps.quality_check.outputs.lint_failed == 'true' || steps.quality_check.outputs.format_failed == 'true' || steps.quality_check.outputs.type_failed == 'true' || steps.quality_check.outputs.test_failed == 'true'
+        run: |
+          echo "❌ 品質ゲートが失敗しました。プルリクエストをマージする前に問題を修正してください。"
+          exit 1
