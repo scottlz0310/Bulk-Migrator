@@ -57,14 +57,15 @@ jobs:
       - name: Python セットアップ
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
+          allow-prereleases: true
 
       - name: uv セットアップ
         uses: astral-sh/setup-uv@v1
 
       - name: 依存関係インストール
         run: |
-          uv venv --python 3.12
+          uv venv --python 3.13
           uv sync
 
       - name: 包括的セキュリティスキャン実行
@@ -141,14 +142,15 @@ jobs:
       - name: Python セットアップ
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
+          allow-prereleases: true
 
       - name: uv セットアップ
         uses: astral-sh/setup-uv@v1
 
       - name: 依存関係インストール
         run: |
-          uv venv --python 3.12
+          uv venv --python 3.13
           uv sync
 
       - name: SBOM 生成
