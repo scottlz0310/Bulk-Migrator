@@ -28,18 +28,28 @@ mkdir -p codeql-results
 
 # CodeQLデータベース作成とスキャン実行
 echo "📊 CodeQLデータベースを作成中..."
+echo "💡 ヒント: Docker DesktopでCPU使用率が高い場合は正常に動作中です"
+echo "⏱️  データベース作成には数分かかる場合があります"
 echo "Command Output:"
 
-# エラー出力をキャプチャして表示
+# Dockerコンテナ内での権限問題を解決
+# 1. ホスト側でディレクトリを作成し、権限を設定
+chmod 755 codeql-results 2>/dev/null || true
+
+# 2. Dockerコンテナをrootユーザーで実行
 if ! docker run --rm \
     -v "$PROJECT_ROOT:/workspace" \
     -w /workspace \
+    --entrypoint="" \
     mcr.microsoft.com/cstsectools/codeql-container:latest \
+    bash -c "set -e && \
+    chmod +x /usr/local/startup_scripts/setup.py 2>/dev/null || true && \
     codeql database create \
     --language=python \
     --source-root=/workspace/src \
     /workspace/codeql-results/python-db \
-    --overwrite 2>&1; then
+    --threads=0 \
+    --overwrite" 2>&1; then
     echo ""
     echo "⚠️  CodeQLデータベース作成に失敗しました。スキップします。"
     echo "📝 可能な原因:"
@@ -51,19 +61,29 @@ if ! docker run --rm \
 fi
 
 echo "🔍 CodeQLクエリを実行中..."
+echo "⏱️  クエリ実行にはさらに数分かかります。お待ちください..."
 if ! docker run --rm \
     -v "$PROJECT_ROOT:/workspace" \
     -w /workspace \
+    --entrypoint="" \
     mcr.microsoft.com/cstsectools/codeql-container:latest \
+    bash -c "set -e && \
+    chmod +x /usr/local/startup_scripts/setup.py 2>/dev/null || true && \
     codeql database analyze \
     /workspace/codeql-results/python-db \
+    python-security-and-quality \
     --format=sarif-latest \
     --output=/workspace/codeql-results/results.sarif \
-    --download 2>&1; then
+    --threads=0 \
+    --download" 2>&1; then
     echo ""
     echo "⚠️  CodeQLクエリ実行に失敗しました。スキップします。"
     exit 0
 fi
+
+# ホスト側で権限を修正
+sudo chown -R $USER:$USER codeql-results 2>/dev/null || true
+chmod -R 755 codeql-results 2>/dev/null || true
 
 # 結果の確認
 if [ -f "codeql-results/results.sarif" ]; then
