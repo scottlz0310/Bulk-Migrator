@@ -348,8 +348,7 @@ def handle_single_scan(scanner, args):
         issues = result.get("issues_count", 0) + result.get("vulnerabilities_count", 0)
         if issues > 0:
             logger.info(
-                f"\n⚠️  {args.scan_type} スキャンで "
-                f"{issues} 件の問題が検出されました。"
+                f"\n⚠️  {args.scan_type} スキャンで {issues} 件の問題が検出されました。"
             )
             logger.info("詳細はレポートを確認してください。")
 
