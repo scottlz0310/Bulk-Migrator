@@ -24,6 +24,16 @@ repos:
 
   - repo: local
     hooks:
+      - id: codeql-python-scan
+        name: CodeQL Python Scan
+        entry: bash scripts/run_codeql.sh
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: false
+
+  - repo: local
+    hooks:
       - id: pytest-check
         name: pytest-check
         entry: uv run python -m pytest -p xdist -q -n auto
