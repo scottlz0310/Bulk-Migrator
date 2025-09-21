@@ -27,16 +27,18 @@ repos:
         pass_filenames: false
         fail_fast: true
 
-  - repo: local
-    hooks:
-      - id: codeql-python-scan
-        name: CodeQL Python Scan
-        entry: bash scripts/run_codeql.sh
-        language: system
-        types: [python]
-        pass_filenames: false
-        always_run: false
-        fail_fast: true
+  # CodeQL は時間がかかるため手動実行のみ
+  # 実行方法: bash scripts/run_codeql.sh
+  # - repo: local
+  #   hooks:
+  #     - id: codeql-python-scan
+  #       name: CodeQL Python Scan
+  #       entry: bash scripts/run_codeql.sh
+  #       language: system
+  #       types: [python]
+  #       pass_filenames: false
+  #       always_run: false
+  #       fail_fast: true
 
   - repo: local
     hooks:

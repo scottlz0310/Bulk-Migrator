@@ -1,20 +1,34 @@
 name: セキュリティスキャン
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-  schedule:
-    # 毎週月曜日の午前3時（UTC）に実行
-    - cron: '0 3 * * 1'
+  # 手動実行のみ（プライベートリポジトリのActions実行時間制約のため）
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: 'スキャンタイプ'
+        required: true
+        default: 'comprehensive'
+        type: choice
+        options:
+          - 'comprehensive'
+          - 'codeql-only'
+          - 'security-only'
+          - 'sbom-only'
+  # 緊急時のみ自動実行
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main, develop ]
+  # schedule:
+  #   # 毎週月曜日の午前3時（UTC）に実行
+  #   - cron: '0 3 * * 1'
 
 jobs:
   codeql:
     name: CodeQL セキュリティ分析
     runs-on: ubuntu-latest
-    # GitHub Advanced Securityが有効な場合のみ実行（環境変数で制御）
-    if: vars.ENABLE_CODEQL == 'true' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'security'))
+    # 手動実行時のみ、かつcodeqlスキャンが選択された場合のみ実行
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == 'codeql-only')
 
     permissions:
       actions: read
@@ -60,6 +74,7 @@ jobs:
   comprehensive-security-scan:
     name: 包括的セキュリティスキャン
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == 'security-only')
 
     permissions:
       contents: read
@@ -178,6 +193,7 @@ jobs:
   sbom-generation:
     name: SBOM 生成
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == 'sbom-only')
 
     permissions:
       contents: read
