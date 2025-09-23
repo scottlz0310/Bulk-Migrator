@@ -164,3 +164,13 @@ yarn-error.log*
 .history/
 .vscode/*.code-snippets
 .vscode/extensions.json
+
+# Auto-generated entries from templates
+*.dll
+*.dylib
+*.exe
+*.exe~
+*.out
+*.test
+go.work
+vendor/
