@@ -18,11 +18,11 @@ format: ## ruff による自動フォーマットを実行
 typecheck: ## mypy による型チェックを実行
 	uv run mypy .
 
-test: ## pytest によるテストを実行
-	uv run pytest -q
+test: ## pytest によるテストを実行（並列実行）
+	uv run pytest -q -n auto
 
-cov: ## カバレッジ付きテストを実行
-	uv run pytest --cov=src --cov-report=term-missing
+cov: ## カバレッジ付きテストを実行（並列実行）
+	uv run pytest --cov=src --cov-report=term-missing -n auto
 
 security: ## セキュリティスキャンを実行
 	uv run python scripts/security_scan.py --scan-type=all
@@ -48,7 +48,7 @@ ci-check: quality-check security ## CI 環境での品質チェック
 release-check: ## リリース前の最終チェック
 	@echo "リリース前チェックを実行中..."
 	$(MAKE) quality-check
-	uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60
+	uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60 -n auto
 	@echo "リリース前チェックが完了しました"
 
 sbom: ## SBOM (Software Bill of Materials) を生成

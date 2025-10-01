@@ -3,12 +3,13 @@ name = "bulk-migrator"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "msal>=1.33.0",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
     "pytest-mock>=3.14.1",
+    "pytest-xdist>=3.6.0",
     "python-dotenv>=1.1.1",
     "requests>=2.32.5",
     "ruff>=0.8.0",
@@ -22,7 +23,7 @@ dependencies = [
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
+target-version = "py313"
 exclude = ["logs/", ".venv/", "build/", ".mypy_cache/", ".pytest_cache/", ".ruff_cache/"]
 
 [tool.ruff.lint]
@@ -32,7 +33,7 @@ select = ["E", "F", "W", "I", "UP", "B", "C90", "T20"]
 known-first-party = ["src"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 warn_unused_ignores = true
 warn_redundant_casts = true
 no_implicit_optional = true
@@ -64,7 +65,8 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-fail-under=60",
     "--junit-xml=pytest-results.xml",
-    "-v"
+    "-v",
+    "-n=auto"
 ]
 markers = [
     "unit: 単体テスト",

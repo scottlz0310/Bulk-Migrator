@@ -12,7 +12,7 @@ from pathlib import Path
 def run_tests():
     """テストを実行し、カバレッジレポートを生成"""
 
-    # テスト実行コマンド
+    # テスト実行コマンド（並列実行）
     cmd = [
         sys.executable,
         "-m",
@@ -22,6 +22,8 @@ def run_tests():
         "--cov-report=term-missing",
         "--cov-fail-under=15",
         "-v",
+        "-n",
+        "auto",
         "tests/",
     ]
 

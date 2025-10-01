@@ -21,14 +21,14 @@ jobs:
       - name: Python セットアップ
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
 
       - name: uv セットアップ
         uses: astral-sh/setup-uv@v1
 
       - name: 仮想環境作成と依存関係インストール
         run: |
-          uv venv --python 3.12
+          uv venv --python 3.13
           uv sync
 
       - name: 品質チェック実行
@@ -66,9 +66,9 @@ jobs:
           fi
           echo "::endgroup::"
 
-          # テストとカバレッジ
+          # テストとカバレッジ（並列実行）
           echo "::group::テストとカバレッジ"
-          if ! uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60 --junit-xml=pytest-results.xml; then
+          if ! uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60 --junit-xml=pytest-results.xml -n auto; then
             echo "test_failed=true" >> $GITHUB_OUTPUT
             echo "❌ テストまたはカバレッジが基準を満たしていません"
           else
