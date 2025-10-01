@@ -1,6 +1,6 @@
 [project]
 name = "bulk-migrator"
-version = "0.1.0"
+version = "2.3.3"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -60,10 +60,6 @@ ignore_missing_imports = true
 testpaths = ["tests/unit", "tests/integration", "tests/security"]
 python_files = ["test_*.py"]
 addopts = [
-    "--cov=src",
-    "--cov-report=html:htmlcov",
-    "--cov-report=term-missing",
-    "--cov-fail-under=60",
     "--junit-xml=pytest-results.xml",
     "-v",
     "-n=auto"

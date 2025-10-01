@@ -53,6 +53,7 @@ security_reports/
 vulnerability-report.json
 bandit-report.json
 sbom.json
+codeql-results/
 
 # 品質レポート
 quality_reports/
@@ -157,3 +158,19 @@ venv.bak/
 wheels/
 yarn-debug.log*
 yarn-error.log*
+
+# Auto-generated entries from templates
+*.vsix
+.history/
+.vscode/*.code-snippets
+.vscode/extensions.json
+
+# Auto-generated entries from templates
+*.dll
+*.dylib
+*.exe
+*.exe~
+*.out
+*.test
+go.work
+vendor/

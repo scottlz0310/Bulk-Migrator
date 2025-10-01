@@ -102,6 +102,58 @@ jobs:
           echo -e "$release_notes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: CHANGELOG.md 更新
+        run: |
+          # CHANGELOG.md が存在しない場合は作成
+          if [ ! -f CHANGELOG.md ]; then
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "All notable changes to this project will be documented in this file." >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+          fi
+
+          # 新しいエントリを CHANGELOG.md の先頭に挿入
+          temp_file=$(mktemp)
+          echo "## [${{ steps.version.outputs.version }}] - $(date -u +%Y-%m-%d)" > "$temp_file"
+          echo "" >> "$temp_file"
+          echo -e "${{ steps.release_notes.outputs.release_notes }}" | sed 's/^## 🚀 リリース [0-9.]*//' >> "$temp_file"
+          echo "" >> "$temp_file"
+          
+          # 既存の CHANGELOG.md の内容を追加（最初の行「# Changelog」以降）
+          if [ -f CHANGELOG.md ]; then
+            tail -n +2 CHANGELOG.md >> "$temp_file"
+          fi
+          
+          mv "$temp_file" CHANGELOG.md
+
+      - name: README.md バージョンバッジ更新
+        run: |
+          # README.md のバージョンバッジを更新
+          if [ -f README.md ]; then
+            # バージョンバッジのパターンを更新
+            sed -i "s/version-[0-9.]\+-/version-${{ steps.version.outputs.version }}-/g" README.md
+            sed -i "s/v[0-9.]\+/v${{ steps.version.outputs.version }}/g" README.md
+          fi
+
+      - name: ドキュメント更新をコミット
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # main ブランチに切り替え
+          git checkout main
+          
+          git add CHANGELOG.md README.md
+          if git diff --staged --quiet; then
+            echo "ドキュメントに変更はありません"
+          else
+            git commit -m "docs: update documentation for v${{ steps.version.outputs.version }}
+            
+            - Update CHANGELOG.md with release notes
+            - Update version badges in README.md"
+            git push origin main
+          fi
+
       - name: GitHub Release 作成
         uses: actions/create-release@v1
         env:

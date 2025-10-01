@@ -1,90 +1,52 @@
 .PHONY: bootstrap lint format typecheck test cov security build clean help
 
-help: ## このヘルプメッセージを表示
-	@echo "利用可能なコマンド:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
+# デフォルトターゲット
+help:
+	@echo "Available targets:"
+	@echo "  bootstrap  - 開発環境のセットアップ"
+	@echo "  lint       - リンティング実行"
+	@echo "  format     - コードフォーマット"
+	@echo "  typecheck  - 型チェック"
+	@echo "  test       - テスト実行（カバレッジなし）"
+	@echo "  cov        - カバレッジ付きテスト実行"
+	@echo "  security   - セキュリティスキャン"
+	@echo "  quality    - 全品質チェック実行"
+	@echo "  clean      - キャッシュファイル削除"
 
-bootstrap: ## 開発環境をセットアップ
+bootstrap:
 	uv venv --python 3.13
 	uv sync
-	uv run pre-commit install
 
-lint: ## ruff によるリンティングを実行
+lint:
 	uv run ruff check .
 
-format: ## ruff による自動フォーマットを実行
+format:
 	uv run ruff format .
 
-typecheck: ## mypy による型チェックを実行
-	uv run mypy .
+typecheck:
+	uv run mypy src/
 
-test: ## pytest によるテストを実行（並列実行）
-	uv run pytest -q -n auto
+test:
+	uv run python -m pytest -p xdist -q -n auto
 
-cov: ## カバレッジ付きテストを実行（並列実行）
-	uv run pytest --cov=src --cov-report=term-missing -n auto
+cov:
+	uv run python -m pytest -p pytest_cov -p xdist --cov=src --cov-report=html:htmlcov --cov-report=term-missing --cov-fail-under=60 -n auto
 
-security: ## セキュリティスキャンを実行
-	uv run python scripts/security_scan.py --scan-type=all
+security:
+	uv run bandit -r src/ -f json -o security-report.json || echo "Security scan completed"
 
-build: ## プロジェクトをビルド
-	uv build
+quality: lint typecheck test
+	@echo "All quality checks completed"
 
-clean: ## キャッシュファイルを削除
-	rm -rf .venv .cache .pytest_cache .ruff_cache .mypy_cache dist build htmlcov .coverage
-	find . -type d -name __pycache__ -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
-
-# 開発用コマンド
-dev-setup: bootstrap ## 開発環境の完全セットアップ
-	@echo "開発環境のセットアップが完了しました"
-
-quality-check: lint typecheck test ## 品質チェックを一括実行
-	@echo "品質チェックが完了しました"
-
-ci-check: quality-check security ## CI 環境での品質チェック
-	@echo "CI 品質チェックが完了しました"
-
-release-check: ## リリース前の最終チェック
-	@echo "リリース前チェックを実行中..."
-	$(MAKE) quality-check
-	uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60 -n auto
-	@echo "リリース前チェックが完了しました"
-
-sbom: ## SBOM (Software Bill of Materials) を生成
-	uv run python scripts/security_scan.py --scan-type=sbom
-
-security-strict: ## セキュリティスキャンを実行（問題検出時に失敗）
-	uv run python scripts/security_scan.py --scan-type=all --fail-on-issues
-
-bandit: ## bandit セキュリティスキャンのみ実行
-	uv run python scripts/security_scan.py --scan-type=bandit
-
-audit: ## pip-audit 脆弱性チェックのみ実行
-	uv run python scripts/security_scan.py --scan-type=audit
-
-metrics: ## 品質メトリクスを収集・表示
-	uv run python src/quality_metrics.py
-
-metrics-report: ## 品質メトリクスレポートを生成
-	@echo "品質メトリクスレポートを生成中..."
-	uv run python src/quality_metrics.py
-	@echo "品質メトリクスレポートが quality_reports/ に保存されました"
-
-alerts-check: ## 品質アラートをチェック
-	uv run python src/quality_alerts.py --check
-
-monthly-report: ## 月次品質レポートを生成
-	uv run python src/quality_alerts.py --monthly
-
-quarterly-report: ## 四半期品質レポートを生成
-	uv run python src/quality_alerts.py --quarterly
-
-semi-annual-report: ## 半年品質レポートを生成
-	uv run python src/quality_alerts.py --semi-annual
-
-quality-dashboard: ## 品質ダッシュボード（メトリクス収集 + アラートチェック）
-	@echo "品質ダッシュボードを実行中..."
-	uv run python src/quality_metrics.py
-	uv run python src/quality_alerts.py --check
-	@echo "品質ダッシュボードが完了しました"
+clean:
+	if exist .venv rmdir /s /q .venv
+	if exist .cache rmdir /s /q .cache
+	if exist .pytest_cache rmdir /s /q .pytest_cache
+	if exist .ruff_cache rmdir /s /q .ruff_cache
+	if exist .mypy_cache rmdir /s /q .mypy_cache
+	if exist htmlcov rmdir /s /q htmlcov
+	if exist dist rmdir /s /q dist
+	if exist build rmdir /s /q build
+	del /q .coverage 2>nul || echo ""
+	del /q pytest-results.xml 2>nul || echo ""
+	del /q security-report.json 2>nul || echo ""

@@ -27,7 +27,7 @@ usage:
 
 import json
 import os
-import subprocess
+import subprocess  # nosec B404
 import sys
 import time
 from datetime import datetime
@@ -165,7 +165,7 @@ def _start_main_process():
         open("logs/src_main_stdout.log", "a", encoding="utf-8") as out,
         open("logs/src_main_stderr.log", "a", encoding="utf-8") as err,
     ):
-        proc = subprocess.Popen(
+        proc = subprocess.Popen(  # nosec B603
             [sys.executable, "-m", "src.main"], stdout=out, stderr=err
         )
         log_watchdog(f"src.main起動完了 (PID: {proc.pid})")

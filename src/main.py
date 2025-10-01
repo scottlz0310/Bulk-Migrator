@@ -79,7 +79,7 @@ def get_current_config_hash():
     ]
     config_string = "|".join(str(part) for part in config_parts)
 
-    return hashlib.md5(config_string.encode()).hexdigest()
+    return hashlib.sha256(config_string.encode()).hexdigest()
 
 
 def check_config_changed():
@@ -168,12 +168,18 @@ def get_onedrive_files(force_crawl=False):
         structured_logger.error("必要な環境変数が設定されていません")
         return []
 
-    assert CLIENT_ID is not None
-    assert CLIENT_SECRET is not None
-    assert TENANT_ID is not None
-    assert SITE_ID is not None
-    assert DRIVE_ID is not None
-    assert USER_PRINCIPAL_NAME is not None
+    if not CLIENT_ID:
+        raise ValueError("CLIENT_ID is required")
+    if not CLIENT_SECRET:
+        raise ValueError("CLIENT_SECRET is required")
+    if not TENANT_ID:
+        raise ValueError("TENANT_ID is required")
+    if not SITE_ID:
+        raise ValueError("SITE_ID is required")
+    if not DRIVE_ID:
+        raise ValueError("DRIVE_ID is required")
+    if not USER_PRINCIPAL_NAME:
+        raise ValueError("USER_PRINCIPAL_NAME is required")
 
     client = GraphTransferClient(CLIENT_ID, CLIENT_SECRET, TENANT_ID, SITE_ID, DRIVE_ID)
 
@@ -309,12 +315,6 @@ def run_transfer(onedrive_files=None):
 
     # 転送クライアント初期化
     # 型チェッカー用のassert（実際の検証は上で済んでいる）
-    assert CLIENT_ID is not None
-    assert CLIENT_SECRET is not None
-    assert TENANT_ID is not None
-    assert SITE_ID is not None
-    assert DRIVE_ID is not None
-    assert USER_PRINCIPAL_NAME is not None
 
     client = GraphTransferClient(CLIENT_ID, CLIENT_SECRET, TENANT_ID, SITE_ID, DRIVE_ID)
 

@@ -91,7 +91,7 @@ class TestConfigHash:
         hash_value = get_current_config_hash()
 
         assert isinstance(hash_value, str)
-        assert len(hash_value) == 32  # MD5ハッシュの長さ
+        assert len(hash_value) == 64  # SHA256ハッシュの長さ
 
         # 同じ設定で再実行すると同じハッシュが生成される
         hash_value2 = get_current_config_hash()
@@ -104,7 +104,7 @@ class TestConfigHash:
         hash_value = get_current_config_hash()
 
         assert isinstance(hash_value, str)
-        assert len(hash_value) == 32
+        assert len(hash_value) == 64
 
     @patch("os.path.exists")
     def test_check_config_changed_no_hash_file(self, mock_exists):

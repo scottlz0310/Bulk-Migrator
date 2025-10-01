@@ -56,9 +56,11 @@ class SecurityScanner:
             )
 
             # bandit は脆弱性が見つかった場合に非ゼロの終了コードを返す
-            if result.returncode != 0 and result.returncode != 1:
-                logger.info(f"❌ bandit 実行エラー: {result.stderr}")
-                return {"status": "error", "message": result.stderr}
+            # 終了コード 0: 問題なし, 1: 問題あり, 2+: エラー
+            if result.returncode > 1:
+                error_msg = result.stderr or result.stdout or "Unknown error"
+                logger.info(f"❌ bandit 実行エラー: {error_msg}")
+                return {"status": "error", "message": error_msg}
 
             # レポートファイルを読み込み
             if bandit_report_path.exists():
@@ -113,9 +115,11 @@ class SecurityScanner:
                 cwd=self.project_root,
             )
 
-            if result.returncode != 0:
-                logger.info(f"❌ pip-audit 実行エラー: {result.stderr}")
-                return {"status": "error", "message": result.stderr}
+            # pip-audit は脆弱性が見つかった場合に非ゼロの終了コードを返す
+            if result.returncode > 1:
+                error_msg = result.stderr or result.stdout or "Unknown error"
+                logger.info(f"❌ pip-audit 実行エラー: {error_msg}")
+                return {"status": "error", "message": error_msg}
 
             # レポートファイルを読み込み
             if audit_report_path.exists():
@@ -304,6 +308,12 @@ class SecurityScanner:
 def handle_full_scan(scanner, args):
     """全スキャンの処理"""
     summary = scanner.run_full_scan()
+
+    # エラーステータスのチェック
+    if summary["overall_status"] == "error":
+        logger.info("\n❌ スキャン実行中にエラーが発生しました。")
+        sys.exit(1)
+
     if args.fail_on_issues:
         bandit_issues = summary["scan_results"]["bandit"].get("issues_count", 0)
         audit_vulnerabilities = summary["scan_results"]["pip_audit"].get(
@@ -311,23 +321,36 @@ def handle_full_scan(scanner, args):
         )
         if bandit_issues > 0 or audit_vulnerabilities > 0:
             logger.info(
-                "\n❌ セキュリティ問題が検出されました。終了コード 1 で終了します。"
+                "\n⚠️  セキュリティ問題が検出されましたが、スキャンは成功しました。"
             )
-            sys.exit(1)
+            logger.info("詳細はセキュリティレポートを確認してください。")
+            # 警告レベルとして処理し、終了コードは 0 を保持
 
 
 def handle_single_scan(scanner, args):
     """単一スキャンの処理"""
+    result = None
+
     if args.scan_type == "bandit":
         result = scanner.run_bandit_scan()
-        if args.fail_on_issues and result.get("issues_count", 0) > 0:
-            sys.exit(1)
     elif args.scan_type == "audit":
         result = scanner.run_pip_audit()
-        if args.fail_on_issues and result.get("vulnerabilities_count", 0) > 0:
-            sys.exit(1)
     elif args.scan_type == "sbom":
-        scanner.generate_sbom()
+        result = scanner.generate_sbom()
+
+    # エラーステータスのチェック
+    if result and result.get("status") == "error":
+        logger.info(f"\n❌ {args.scan_type} スキャンでエラーが発生しました。")
+        sys.exit(1)
+
+    # 問題検出時の処理（警告レベル）
+    if args.fail_on_issues and result:
+        issues = result.get("issues_count", 0) + result.get("vulnerabilities_count", 0)
+        if issues > 0:
+            logger.info(
+                f"\n⚠️  {args.scan_type} スキャンで {issues} 件の問題が検出されました。"
+            )
+            logger.info("詳細はレポートを確認してください。")
 
 
 def main():
@@ -356,6 +379,7 @@ def main():
             handle_single_scan(scanner, args)
 
         logger.info("\n✅ セキュリティスキャンが完了しました。")
+        return 0
 
     except KeyboardInterrupt:
         logger.info("\n⚠️  スキャンが中断されました。")

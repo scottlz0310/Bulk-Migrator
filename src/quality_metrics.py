@@ -7,7 +7,7 @@
 
 import json
 import logging
-import subprocess
+import subprocess  # nosec B404
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -85,7 +85,7 @@ class QualityMetricsCollector:
         """カバレッジメトリクスを収集"""
         try:
             # pytest-covを実行してカバレッジを取得
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["uv", "run", "pytest", "--cov=src", "--cov-report=json", "--quiet"],
                 cwd=self.project_root,
                 capture_output=True,
@@ -114,7 +114,7 @@ class QualityMetricsCollector:
         """リンティングエラー数を収集"""
         try:
             # ruffを実行してエラー数を取得
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["uv", "run", "ruff", "check", ".", "--output-format=json"],
                 cwd=self.project_root,
                 capture_output=True,
@@ -139,7 +139,7 @@ class QualityMetricsCollector:
         """型チェックエラー数を収集"""
         try:
             # mypyを実行してエラー数を取得
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["uv", "run", "mypy", ".", "--no-error-summary"],
                 cwd=self.project_root,
                 capture_output=True,
@@ -168,7 +168,7 @@ class QualityMetricsCollector:
         """セキュリティ脆弱性数を収集"""
         try:
             # banditを実行してセキュリティ問題を取得
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["uv", "run", "bandit", "-r", "src", "-f", "json"],
                 cwd=self.project_root,
                 capture_output=True,
@@ -193,7 +193,7 @@ class QualityMetricsCollector:
         """テストメトリクス（総数、失敗数）を収集"""
         try:
             # pytestを実行してテスト結果を取得
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 B607
                 ["uv", "run", "pytest", "--tb=no", "-q"],
                 cwd=self.project_root,
                 capture_output=True,

@@ -97,7 +97,7 @@ class GraphTransferClient:
         if onedrive_drive_id and file_id:
             # 方法1: ファイルIDを使って直接ダウンロードURL取得
             file_url = f"{self.base_url}/drives/{onedrive_drive_id}/items/{file_id}"
-            file_resp = requests.get(file_url, headers=self._headers())
+            file_resp = requests.get(file_url, headers=self._headers(), timeout=timeout)
 
             if file_resp.status_code == 200:
                 file_data = file_resp.json()
@@ -394,7 +394,7 @@ class GraphTransferClient:
             "folder": {},
             "@microsoft.graph.conflictBehavior": "fail",
         }
-        resp = requests.post(url, headers=self._headers(), json=payload)
+        resp = requests.post(url, headers=self._headers(), json=payload, timeout=10)
         if resp.status_code == 409:
             # 既に存在する場合は何もしない（正常終了扱い）
             logger = get_structured_logger("transfer")
@@ -435,7 +435,7 @@ class GraphTransferClient:
                 f"/root:/{current_path}"
             )
             try:
-                resp = requests.get(check_url, headers=self._headers())
+                resp = requests.get(check_url, headers=self._headers(), timeout=10)
                 if resp.status_code == 404:
                     # フォルダが存在しないので作成
                     logger = get_structured_logger("transfer")
@@ -523,7 +523,9 @@ class GraphTransferClient:
             }
         }
 
-        response = requests.post(session_url, headers=self._headers(), json=payload)
+        response = requests.post(
+            session_url, headers=self._headers(), json=payload, timeout=10
+        )
         response.raise_for_status()
         return response.json()
 
@@ -538,7 +540,7 @@ class GraphTransferClient:
         if onedrive_drive_id and file_id:
             # ファイルIDを使って直接ダウンロードURL取得
             file_url = f"{self.base_url}/drives/{onedrive_drive_id}/items/{file_id}"
-            file_resp = requests.get(file_url, headers=self._headers())
+            file_resp = requests.get(file_url, headers=self._headers(), timeout=10)
 
             if file_resp.status_code == 200:
                 file_data = file_resp.json()
