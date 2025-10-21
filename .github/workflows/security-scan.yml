@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: チェックアウト
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: CodeQL 初期化
         id: codeql-init
@@ -91,7 +91,7 @@ jobs:
 
     steps:
       - name: チェックアウト
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Python セットアップ
         uses: actions/setup-python@v5
@@ -194,7 +194,7 @@ jobs:
 
     steps:
       - name: チェックアウト
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0  # 全履歴を取得
 
@@ -218,7 +218,7 @@ jobs:
 
     steps:
       - name: チェックアウト
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Python セットアップ
         uses: actions/setup-python@v5
