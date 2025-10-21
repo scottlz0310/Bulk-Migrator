@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           persist-credentials: true
 
       - name: Python セットアップ
@@ -173,6 +173,9 @@ jobs:
 
           echo "🏷️ タグをプッシュ中..."
           git push origin ${{ steps.version.outputs.tag_name }}
+
+          echo "⚠️ 注意: リリース自動化を発火させるにはPAT_TOKENシークレットが必要です"
+          echo "設定されていない場合は手動でリリースワークフローを実行してください"
 
           echo "✅ プッシュ完了"
 
