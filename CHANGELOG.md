@@ -1,4 +1,11 @@
-## [main] - 2025-10-21
+## [2.3.5] - 2025-10-21
+
+
+
+---
+
+**完全な変更履歴**: https://github.com/scottlz0310/Bulk-Migrator/compare/v2.3.5...v2.3.5
+
 
 
 
