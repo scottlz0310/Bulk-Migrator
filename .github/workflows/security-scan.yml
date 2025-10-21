@@ -49,7 +49,7 @@ jobs:
 
       - name: CodeQL 初期化
         id: codeql-init
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           queries: security-extended,security-and-quality
@@ -57,12 +57,12 @@ jobs:
 
       - name: 自動ビルド
         if: steps.codeql-init.outcome == 'success'
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
         continue-on-error: true
 
       - name: CodeQL 分析実行
         if: steps.codeql-init.outcome == 'success'
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{matrix.language}}"
         continue-on-error: true
