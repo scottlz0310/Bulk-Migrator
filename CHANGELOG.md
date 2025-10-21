@@ -4,6 +4,19 @@
 
 ---
 
+
+## [2.3.5] - 2025-10-21
+
+### 変更内容
+
+- chore(deps): bump actions/setup-python from 5 to 6 (#6) (2bb4c46)
+- chore(deps): bump actions/checkout from 4 to 5 (#3) (8dd547f)
+- chore(deps): bump astral-sh/setup-uv from 1 to 7 (#4) (9434320)
+- chore(deps): bump github/codeql-action from 3 to 4 (#5) (2256c08)
+- chore(deps): bump dorny/test-reporter from 1 to 2 (#2) (a433bac)
+- feat: Dependabot自動更新とオートマージを追加 (afae542)
+- docs: update documentation for vmain (9636b98)
+
 **完全な変更履歴**: https://github.com/scottlz0310/Bulk-Migrator/compare/v2.3.4...main
 
 
