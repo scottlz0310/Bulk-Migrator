@@ -1,18 +1,31 @@
-# 技術スタック
+# 技術スタック v1.0
 
-## ビルドシステム・パッケージ管理
-- **パッケージマネージャー**: `uv`（必須） - モダンな Python パッケージマネージャー
-- **Python バージョン**: 3.13+ （pyproject.toml で指定）
-- **ロックファイル**: `uv.lock` （コミット必須）
+## 必須スタック
+- **Python**: 3.11+ （pyproject.toml: `requires-python = ">=3.11"`）
+- **パッケージマネージャー**: `uv`（必須）
+- **ビルドバックエンド**: Hatchling（pyproject.toml で指定）
+- **リント・フォーマット**: `ruff`
+- **型チェック**: `mypy`
+- **ロックファイル**: `uv.lock` （CIでも自動生成、git除外）
 - **仮想環境**: `.venv` （`uv venv` で作成）
+
+## CLI スタック（該当する場合）
+本プロジェクトは現在 CLI フレームワークを使用していませんが、将来的に以下を採用可能：
+- **Typer**: CLIフレームワーク
+- **Rich**: 出力・進捗表示
+- **pydantic-settings**: 設定管理
 
 ## 主要依存関係
 - **msal**: Graph API 認証用 Microsoft Authentication Library
 - **requests**: API 呼び出し用 HTTP クライアント
 - **python-dotenv**: .env ファイルからの環境変数管理
-- **pytest**: カバレッジレポート付きテストフレームワーク
+- **pytest**: テストフレームワーク
 - **pytest-cov**: カバレッジプラグイン
 - **pytest-mock**: モック用ユーティリティ
+- **pytest-xdist**: 並列テスト実行
+- **bandit**: セキュリティ静的解析
+- **pip-audit**: 依存関係脆弱性スキャン
+- **cyclonedx-bom**: SBOM 生成
 
 ## 設定管理
 - **環境変数**: `.env` ファイル（コミット対象外、`sample.env` をテンプレートとして使用）
@@ -57,15 +70,25 @@ uv run python src/main.py --reset
 uv run python src/main.py --full-rebuild
 ```
 
-### テスト
+### 品質チェック
 ```bash
+# リント・フォーマットチェック
+uv run ruff check .
+uv run ruff format --check .
+
+# 型チェック
+uv run mypy src/
+
 # カバレッジ付き全テスト実行
-uv run pytest
+uv run pytest --cov=src --cov-report=term-missing
 
 # 特定のテストカテゴリ実行
 uv run pytest -m unit
 uv run pytest -m integration
 uv run pytest -m auth
+
+# セキュリティスキャン
+uv run python scripts/security_scan.py
 ```
 
 ## アーキテクチャパターン
