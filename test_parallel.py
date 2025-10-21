@@ -13,14 +13,7 @@ from pathlib import Path
 def run_test_with_timing(parallel=False):
     """テストを実行し、実行時間を測定"""
 
-    cmd = [
-        sys.executable,
-        "-m",
-        "pytest",
-        "tests/unit/",
-        "-v",
-        "--tb=short"
-    ]
+    cmd = [sys.executable, "-m", "pytest", "tests/unit/", "-v", "--tb=short"]
 
     if parallel:
         cmd.extend(["-n", "auto"])
@@ -52,7 +45,6 @@ def main():
 
     # 並列実行
     parallel_time, parallel_success = run_test_with_timing(parallel=True)
-
 
     if sequential_success and parallel_success and sequential_time > 0:
         speedup = sequential_time / parallel_time
