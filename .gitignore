@@ -8,6 +8,10 @@ venv/
 .venv/
 idea/
 
+# Amazon Q
+.amazonq/
+!.amazonq/rules/
+
 # テスト関連
 htmlcov/
 .coverage
