@@ -25,11 +25,11 @@ jobs:
 
       - name: uv セットアップ
         uses: astral-sh/setup-uv@v1
+        with:
+          enable-cache: true
 
-      - name: 仮想環境作成と依存関係インストール
-        run: |
-          uv venv --python 3.13
-          uv sync
+      - name: 依存関係インストール
+        run: uv sync --python 3.13
 
       - name: 品質チェック実行
         id: quality_check

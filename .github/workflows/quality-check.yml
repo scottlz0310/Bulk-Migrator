@@ -41,22 +41,13 @@ jobs:
         uses: astral-sh/setup-uv@v1
         with:
           version: "latest"
-
-      - name: 仮想環境作成
-        run: uv venv --python ${{ matrix.python-version }}
-
-      - name: 依存関係キャッシュ
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/uv
-            .venv
-          key: ${{ runner.os }}-python-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'uv.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-python-${{ matrix.python-version }}-
+          enable-cache: true
+          cache-dependency-glob: |
+            pyproject.toml
+            uv.lock
 
       - name: 依存関係インストール
-        run: uv sync
+        run: uv sync --python ${{ matrix.python-version }}
 
       - name: リンティング (ruff check)
         run: uv run ruff check .

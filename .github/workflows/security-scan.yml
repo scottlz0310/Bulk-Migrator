@@ -92,11 +92,11 @@ jobs:
 
       - name: uv セットアップ
         uses: astral-sh/setup-uv@v1
+        with:
+          enable-cache: true
 
       - name: 依存関係インストール
-        run: |
-          uv venv --python 3.13
-          uv sync
+        run: uv sync --python 3.13
 
       - name: 包括的セキュリティスキャン実行
         run: |
@@ -211,11 +211,11 @@ jobs:
 
       - name: uv セットアップ
         uses: astral-sh/setup-uv@v1
+        with:
+          enable-cache: true
 
       - name: 依存関係インストール
-        run: |
-          uv venv --python 3.13
-          uv sync
+        run: uv sync --python 3.13
 
       - name: SBOM 生成
         run: |
