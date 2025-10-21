@@ -25,7 +25,6 @@ jobs:
 
     permissions:
       contents: write
-      metadata: write
       pull-requests: write
 
     steps:
