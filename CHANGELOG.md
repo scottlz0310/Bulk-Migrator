@@ -5,6 +5,27 @@
 ---
 
 
+## [2.3.4] - 2025-10-21
+
+### 変更内容
+
+- fix: Windows PowerShell互換性のため複数行コマンドを修正 (a10b97d)
+- fix: 無効なmetadata権限を削除 (5f2ff8f)
+- fix: yamllintエラーを修正（長い行の分割、末尾空白削除、括弧修正） (3ce0044)
+- feat: yamllintをpre-commitに追加、YAML品質チェックを強化 (ca2bdc6)
+- fix: Python要件を3.11+に変更してCI互換性を確保 (6fddffc)
+- fix: Windows環境でのuv venv問題を修正、uv syncに--pythonオプションを追加 (3aad3be)
+- refactor: コードの可読性向上のため、コマンドリストのフォーマットを修正 (340e844)
+- chore: .amazonq/をgit除外、.amazonq/rules/のみ追跡対象に設定 (53a555e)
+- refactor: 不要な出力を削除し、コードをクリーンアップ (8f036eb)
+- Merge branch 'main' of https://github.com/scottlz0310/Bulk-Migrator (d01b803)
+- feat: Python 3.13へのアップグレードと並列テスト実行の導入 - Pythonバージョンを3.12から3.13に更新 - `pytest-xdist`を追加し、テストの並列実行を有効化 - GitHub ActionsおよびMakefileで並列実行オプションを追加 - READMEとアップグレードノートを更新 (e4e7ff4)
+- feat: .gitignoreにテンプレートからの自動生成エントリを追加 (cb085a9)
+- Merge branch 'main' of github.com:scottlz0310/Bulk-Migrator (9b0b997)
+- Add VSCode related entries to .gitignore (b9b03b6)
+- fix: リリース準備ワークフローのタグプッシュ問題を修正 (a7782b8)
+
+
 ## [2.3.3] - 2025-09-21
 
 ### 変更内容
