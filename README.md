@@ -1,213 +1,160 @@
-# Bulk-Migration
+# Bulk-Migrator
 
-![Version](https://img.shields.io/badge/version-main-blue)
-![Python](https://img.shields.io/badge/python-3.13+-green)
+![Version](https://img.shields.io/badge/version-2.3.5-blue)
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/license-Private-red)
 
-組織用 OneDrive から SharePoint への大容量ファイル転送自動化スクリプト
+Microsoft 365 環境で OneDrive から SharePoint Online へ大容量コンテンツを安全に移行するためのバッチ／ツール群。Microsoft Graph API を利用し、フォルダ階層と再開性を維持した移行を支援します。
 
 ## 概要
-- OneDrive上の大量ファイルをSharePoint Onlineへ安全・効率的に移行するバッチツール
-- ディレクトリ構造を保持したまま数百GB規模のファイルを安全・効率的に転送
-- Microsoft Graph API を利用し、4MB以上の大容量ファイルはチャンクアップロード対応
-- ログ・インデックス・スキップリストによる堅牢な運用に加え転送失敗時の自動リトライ・進捗監視・自動再起動（watchdog）機能あり
-- **品質向上機能**: 自動リンティング、テストカバレッジ、セキュリティスキャン、構造化ログ対応
-- 利用対象者：SharepontサイトとOndriveを同じ組織上で運用してる管理者またはその権限を有する方
-
----
+- 転送対象を OneDrive から再帰的に収集し、SharePoint のドキュメント ライブラリへストリーミング転送。
+- 4 MB 以上のファイルは自動的にアップロード セッションで分割し、並列転送・再試行・タイムアウトを構成可能。
+- スキップリスト、キャッシュ、構造化ログを使って長時間ジョブでも安全に再開・検証できるよう設計。
+- Watchdog、品質メトリクス、セキュリティ スキャンなどの保守用ユーティリティを付属。
 
 ## 主な機能
+- `src/main.py`: 転送フロー全体を制御し、`--reset`/`--full-rebuild` オプションでキャッシュと転送を切り替え。
+- `src/transfer.py`: Graph API を呼び出してファイル一覧取得とチャンク アップロードを実行。並列転送とバックオフリトライを提供。
+- `src/rebuild_skip_list.py`: SharePoint 側をクロールしてスキップリストを生成し、再実行時に重複転送を防止。
+- `src/watchdog.py`: ログを監視し、一定時間更新が止まった場合に `src.main` を自動再起動。
+- `src/quality_metrics.py` / `src/quality_alerts.py`: リンティング・型チェック・テスト・セキュリティ結果を収集し、閾値を下回った場合にアラートやレポートを生成。
+- `scripts/security_scan.py`: bandit・pip-audit・SBOM 生成を一括で実行。
+- `utils/` 配下: クロール CLI、統計算出、検証ツールなどの補助スクリプト。
 
-- OneDrive/SharePoint間のファイル・フォルダ構造を再帰的に転送
-- 4MB以上のファイルはアップロードセッションによる分割転送
-- 転送失敗時の自動リトライ・スキップリスト管理
-- 転送進捗・エラー・成功ログの出力
-- watchdogによるフリーズ検知＆自動再起動(完了時に未転送ファイルのリトライを含む)
-- 転送漏れ検証用のrebuild/verifyバッチ
-
----
-
-## 使い方
-
-### 基本セットアップ
-
-1. **Python 3.13 以上をインストール**
-2. **uv パッケージマネージャーのインストール**
-   ```bash
-   # Linux/macOS
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-
-   # Windows (PowerShell)
-   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-   ```
-3. **プロジェクトのセットアップ**
-   ```bash
-   # 仮想環境の作成
-   uv venv --python 3.13
-
-   # 依存関係のインストール
-   uv sync
-
-   # 環境変数テンプレートのコピー
-   cp sample.env .env
-   # .env を編集して Microsoft Graph API 認証情報を設定
-   ```
-
-### 開発・品質チェック
-
-4. **テストの実行（推奨）**
-   ```bash
-   # 全テスト実行
-   uv run pytest
-
-   # カバレッジ付きテスト実行
-   uv run pytest --cov=src --cov-report=html
-
-   # 品質チェック
-   uv run ruff check .
-   uv run mypy src/
-   ```
-
-### アプリケーション実行
-
-5. **設定ファイルの準備**
-   - `.env` にMicrosoft Graph API認証情報・転送元/先情報を記載（SETUPGUIDE.md参照）
-   - 必要に応じて `config/config.json` で詳細設定
-
-6. **キャッシュ情報の消去と再構築**（初回または設定変更時）
-   ```bash
-   uv run python src/main.py --reset
-   ```
-
-7. **通常運用（監視付き）**
-   ```bash
-   uv run python src/watchdog.py
-   ```
-
-### 品質管理・監視
-
-8. **品質メトリクスの収集**
-   ```bash
-   # 品質メトリクス収集
-   uv run python src/quality_metrics.py
-
-   # 品質アラートチェック
-   uv run python src/quality_alerts.py --check
-
-   # 月次レポート生成
-   uv run python src/quality_alerts.py --monthly
-   ```
-
-9. **セキュリティスキャン**
-   ```bash
-   # セキュリティスキャン実行
-   uv run python scripts/security_scan.py
-   ```
-
----
-
-## 品質向上機能
-
-### 自動品質チェック
-
-本プロジェクトでは以下の品質向上機能が導入されています：
-
-#### コード品質
-- **リンティング**: ruff による自動コードフォーマットと静的解析
-- **型チェック**: mypy による型安全性の確保
-- **テストカバレッジ**: pytest-cov による包括的なテストカバレッジ測定
-
-#### セキュリティ
-- **セキュリティスキャン**: bandit による Python セキュリティ脆弱性の自動検出
-- **秘密情報管理**: 機密情報の自動マスキングとログ保護
-- **依存関係監査**: 既知の脆弱性を持つパッケージの検出
-
-#### 監視・ログ
-- **構造化ログ**: JSON 形式による構造化ログ出力
-- **品質メトリクス**: カバレッジ、リンティングエラー、セキュリティ脆弱性の自動収集
-- **アラート機能**: 品質閾値を下回った場合の自動通知
-
-### 開発者向けコマンド
-
-```bash
-# 開発環境のセットアップ
-make bootstrap
-
-# コード品質チェック
-make lint          # リンティング実行
-make format        # コードフォーマット
-make typecheck     # 型チェック
-make test          # テスト実行
-make cov           # カバレッジ付きテスト
-
-# セキュリティチェック
-make security      # セキュリティスキャン
-
-# 全体的な品質チェック
-make quality       # 全ての品質チェックを実行
+## ディレクトリ構成
+```
+Bulk-Migrator/
+├── src/
+│   ├── main.py
+│   ├── transfer.py
+│   ├── rebuild_skip_list.py
+│   ├── watchdog.py
+│   ├── quality_metrics.py
+│   ├── quality_alerts.py
+│   ├── config_manager.py
+│   ├── logger.py
+│   ├── structured_logger.py
+│   ├── skiplist.py
+│   ├── auth.py
+│   └── utils/
+│       └── find_and_delete_renamed_folders.py
+├── utils/
+│   ├── file_crawler.py
+│   ├── file_crawler_cli.py
+│   ├── collect_onedrive_skiplist_stats.py
+│   ├── collect_stats.py
+│   ├── collect_transfer_success_stats_v2.py
+│   ├── compare_entry_detail.py
+│   ├── predict_completion.py
+│   ├── remove_empty_files.py
+│   ├── verify_skiplist_vs_sharepoint.py
+│   └── verify_transfer_log.py
+├── scripts/security_scan.py
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── security/
+├── config/config.json
+├── sample.env
+├── SETUPGUIDE.md
+├── doc/
+└── Makefile
 ```
 
-### CI/CD パイプライン
+## セットアップ
+### 前提
+- Python 3.11 以上（開発・CI では 3.13 を想定）
+- [uv](https://github.com/astral-sh/uv) パッケージマネージャー
+- Microsoft Graph API にアクセスできる Azure AD アプリ登録済み
 
-GitHub Actions により以下が自動実行されます：
-- プルリクエスト時の品質チェック
-- マルチプラットフォーム（Ubuntu/Windows/macOS）でのテスト
-- セキュリティスキャンと脆弱性検出
-- カバレッジレポートの生成
+### 手順
+1. uv をインストールし、仮想環境を作成します（Windows は PowerShell 相当のコマンドを使用）。
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   uv venv --python 3.13
+   source .venv/bin/activate
+   ```
+2. 依存関係を同期します。
+   ```bash
+   uv sync
+   ```
+3. 環境変数ファイルを作成し、Microsoft Graph の認証情報と転送設定を記入します。
+   ```bash
+   cp sample.env .env
+   # 必要なキーは SETUPGUIDE.md を参照して編集
+   ```
 
----
+### 環境変数 (.env)
+- `CLIENT_ID` / `CLIENT_SECRET` / `TENANT_ID`: Azure AD アプリの認証情報。
+- `SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME`: 転送元ユーザーの UPN。
+- `SOURCE_ONEDRIVE_FOLDER_PATH`: クロールを開始する OneDrive 上のルートフォルダ。
+- `SOURCE_ONEDRIVE_DRIVE_ID`: OneDrive ドライブ ID（UPN でアクセスできない場合に必須）。
+- `DESTINATION_SHAREPOINT_SITE_ID` / `DESTINATION_SHAREPOINT_DRIVE_ID`: SharePoint サイトとドキュメントライブラリの ID。
+- `DESTINATION_SHAREPOINT_DOCLIB`: 転送先ドキュメントライブラリのルートフォルダ名。
+- `DESTINATION_SHAREPOINT_HOST_NAME` / `DESTINATION_SHAREPOINT_SITE_PATH`: 一部ユーティリティで利用する SharePoint ホスト情報。
 
-## 設定ファイル
+### config/config.json
+- `chunk_size_mb`: チャンクアップロード時の分割サイズ（MB）。
+- `large_file_threshold_mb`: セッションアップロードに切り替えるファイルサイズ（MB）。
+- `max_parallel_transfers`: 同時転送数。
+- `retry_count`: 転送リトライ回数。
+- `timeout_sec`: HTTP タイムアウト。
+- `onedrive_files_path` / `sharepoint_current_files_path` / `skip_list_path`: 各種キャッシュファイル保存先。
+- `transfer_log_path`: 転送ログの出力先。
+- その他のキーは `config/config.json` と `config_manager.py` を参照してください。
 
-- `.env` … 認証情報・転送元/先パス等（**必須。`sample.env`を参考に作成。詳細はSETUPGUIDE.md参照**）
-- `config/config.json` … チャンクサイズ・並列数・ログパス等（**任意。未設定時はデフォルト値で動作**）
-- `sample.env` … 配布用の.envテンプレート。**本番運用時は必ず値を記入し`.env`として保存**
-- `SETUPGUIDE.md` … Graph APIキー取得・権限付与・ID確認方法などのセットアップ手順書
+## 基本的な運用フロー
+1. 初回または設定・環境変数を変更した場合はキャッシュを再生成します。  
+   `uv run python -m src.main --reset`
+2. 通常運用では OneDrive キャッシュとスキップリストを参照しつつ転送を実行します。  
+   `uv run python -m src.main`
+3. SharePoint 側を含めて強制再クロールしたい場合はフルリビルドを使用します。  
+   `uv run python -m src.main --full-rebuild`
+4. ログは `logs/transfer_start_success_error.log` に出力され、`logs/onedrive_files.json` / `logs/sharepoint_current_files.json` / `logs/skip_list.json` にキャッシュが保存されます。
 
----
+## 監視と保守支援ツール
+- `uv run python -m src.watchdog`: 転送ログの更新を監視し、一定時間無反応の場合に `src.main` を再起動。
+- `uv run python -m src.rebuild_skip_list`: SharePoint をクロールしてスキップリストを再構築。
+- `uv run python utils/file_crawler_cli.py onedrive --save logs/onedrive_files.json`: OneDrive 側の最新リストを収集。
+- `uv run python utils/file_crawler_cli.py sharepoint --save logs/sharepoint_current_files.json`: SharePoint の現在の状態を取得。
+- `uv run python utils/file_crawler_cli.py skiplist --root DEST_LIB --save logs/skip_list.json`: SharePoint から直接スキップリストを生成。
+- `uv run python utils/predict_completion.py`: 転送ログから残作業時間を推定。
+
+## 品質・テスト・セキュリティ
+- `uv run pytest`: すべてのテスト（`tests/unit`, `tests/integration`, `tests/security`）を実行。
+- `uv run pytest -m unit` / `-m integration` / `-m security`: マーカ別テスト実行。
+- `uv run pytest --cov=src --cov-report=term-missing`: カバレッジ測定。
+- `uv run ruff check .` / `uv run ruff format --check .`: コードスタイルと静的解析。
+- `uv run mypy src/`: 型チェック。
+- `uv run python src/quality_metrics.py`: 品質メトリクスの収集と `quality_reports/metrics_*.json` への保存。
+- `uv run python src/quality_alerts.py --check`: 閾値チェックとアラート生成（`quality_reports/alerts/`）。
+- `uv run python scripts/security_scan.py`: bandit・pip-audit・SBOM の一括実行（`security_reports/`）。
+- `make lint` / `make test` / `make quality`: uv コマンドをまとめて実行するショートカット。
+
+## ログと生成物
+- `logs/transfer_start_success_error.log`: ローテーション付き転送ログ。
+- `logs/onedrive_files.json`: OneDrive 側の最新ファイルリストキャッシュ。
+- `logs/sharepoint_current_files.json`: SharePoint 側のキャッシュ。
+- `logs/skip_list.json`: 転送済みと判定されたファイルのスキップリスト。
+- `logs/config_hash.txt`: 直近に使用した設定ハッシュ。変更検知に利用。
+- `quality_reports/`: 品質メトリクス、アラート、定期レポート。
+- `security_reports/`: セキュリティスキャン結果と SBOM。
+- `pytest-results.xml`, `htmlcov/`: テスト結果やカバレッジレポート（必要に応じて生成）。
 
 ## 既知の制限・注意事項
+- Graph API の仕様上、4 MB 以上のファイルはアップロードセッションでの分割が必須です。
+- SharePoint へ転送後はメタデータやタイムスタンプが変化する場合があり、`verify` 系スクリプトはファイル名とパスの一致のみを検証します。
+- API レート制限に達した場合は自動リトライされますが、大量転送時は追加の待機時間が発生します。
+- `DESTINATION_SHAREPOINT_DOCLIB` はドキュメントライブラリ直下の 1 階層のみ指定可能です。サブフォルダ構成は OneDrive 側の階層で調整してください。
+- Windows 環境での長時間運用時はウイルス対策ソフトやスリープ設定によりログ更新が止まる場合があるため、watchdog の導入を推奨します。
 
-- OneDrive/SharePointのAPI仕様上、4MB以上のファイルはチャンクアップロード必須
-- すべてのファイルはAPI経由でリモートファイルをクロールしている為、走査時間が長くかかるが、ローカルディスクを圧迫しない
-- ファイル名・パス長・属性の差異に注意
-- 大量ファイル・大容量ファイルの転送には十分な時間・帯域が必要
-- 検証（verify）は転送完了後に--full-rebuildオプションで起動して再走査すれば転送漏れ等はチェックできるがパス＋ファイル名の照合のみである(Sharepointの仕様によりメタデータの付加、タイムスタンプの変更が伴ってしまう)
-
----
-
-
-## トラブルシューティング・FAQ
-
-- **Q. `DESTINATION_SHAREPOINT_DOCLIB` で複数階層を指定したい**
-  - A. SharePointのドキュメントライブラリ名（`DESTINATION_SHAREPOINT_DOCLIB`）は「トップディレクトリ直下の一階層のみ」指定可能です。`folder1/folder2` のような複数階層は指定できません。サブフォルダを作成したい場合は、転送元OneDrive側のディレクトリ構造をそのまま維持してください。
-
-- **Q. Graph ExplorerでIDや情報がうまく見つからない**
-  - A. Graph Explorerは直感的でない部分が多いですが、以下のキーワード・APIパスが特に有用です：
-    - `me/drive` … 自分のOneDrive情報
-    - `users/{userPrincipalName}/drive` … 指定ユーザーのOneDrive
-    - `sites/{domain}.sharepoint.com:/sites/{site-path}` … SharePointサイトID取得
-    - `sites/{site-id}/drives` … ドキュメントライブラリ一覧
-    - `sites/{site-id}/drives/{drive-id}/root/children` … ルート配下のファイル・フォルダ一覧
-  - 検索ワード例：「drive id」「site id」「sharepoint document library id」「graph api list files」など
-  - レスポンスの`id`や`name`を.envに転記してください。
-
-- **Q. .envやconfig.jsonの値が反映されない/エラーになる**
-  - A. パスやID、シークレットのコピペミス・全角/半角・余計な空白に注意してください。特にダブルクォートや改行の混入に注意。
-
-- **Q. 転送が途中で止まる・watchdogが再起動を繰り返す**
-  - A. ネットワークやAPI制限、ファイル名の禁則文字、権限不足などが原因の場合があります。`logs/watchdog.log`や`logs/src_main_stdout.log`を確認し、該当ファイルやエラー内容を特定してください。
-
----
-
-## 今後の改善予定
-
-- verify機能の強化
-- ドキュメント・運用手順のさらなる充実
-
----
+## ドキュメント
+- `SETUPGUIDE.md`: Azure アプリ登録、Graph Explorer での ID 取得手順。
+- `doc/operational_procedures.md`: 定常運用フローと対応手順。
+- `doc/quality_checklist.md`: 品質ゲートと確認項目。
+- `doc/rollback_plan.md`: 転送失敗時のロールバック計画。
+- `UPGRADE_NOTES.md`: バージョンアップ時の変更点。
 
 ## ライセンス・問い合わせ
-
-- 本リポジトリは非公開・社内利用限定
-- ご質問・不具合報告は管理者まで
+- 本リポジトリは社内利用限定のプライベートプロジェクトです。
+- 不具合や質問はプロジェクト管理者までご連絡ください。
