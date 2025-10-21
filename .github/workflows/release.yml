@@ -12,9 +12,9 @@ on:
         default: 'patch'
         type: choice
         options:
-        - patch
-        - minor
-        - major
+          - patch
+          - minor
+          - major
       prerelease:
         description: 'プレリリース'
         required: false
@@ -95,7 +95,9 @@ jobs:
           fi
 
           release_notes="$release_notes---\n\n"
-          release_notes="$release_notes**完全な変更履歴**: https://github.com/${{ github.repository }}/compare/${latest_tag}...${{ steps.version.outputs.tag_name }}"
+          url="https://github.com/${{ github.repository }}"
+          release_notes="$release_notes**完全な変更履歴**: "
+          release_notes="$release_notes$url/compare/${latest_tag}...${{ steps.version.outputs.tag_name }}"
 
           # 改行文字をエスケープしてGitHub Outputに設定
           echo "release_notes<<EOF" >> $GITHUB_OUTPUT
@@ -116,14 +118,15 @@ jobs:
           temp_file=$(mktemp)
           echo "## [${{ steps.version.outputs.version }}] - $(date -u +%Y-%m-%d)" > "$temp_file"
           echo "" >> "$temp_file"
-          echo -e "${{ steps.release_notes.outputs.release_notes }}" | sed 's/^## 🚀 リリース [0-9.]*//' >> "$temp_file"
+          notes="${{ steps.release_notes.outputs.release_notes }}"
+          echo -e "$notes" | sed 's/^## 🚀 リリース [0-9.]*//' >> "$temp_file"
           echo "" >> "$temp_file"
-          
+
           # 既存の CHANGELOG.md の内容を追加（最初の行「# Changelog」以降）
           if [ -f CHANGELOG.md ]; then
             tail -n +2 CHANGELOG.md >> "$temp_file"
           fi
-          
+
           mv "$temp_file" CHANGELOG.md
 
       - name: README.md バージョンバッジ更新
@@ -139,16 +142,16 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
+
           # main ブランチに切り替え
           git checkout main
-          
+
           git add CHANGELOG.md README.md
           if git diff --staged --quiet; then
             echo "ドキュメントに変更はありません"
           else
             git commit -m "docs: update documentation for v${{ steps.version.outputs.version }}
-            
+
             - Update CHANGELOG.md with release notes
             - Update version badges in README.md"
             git push origin main

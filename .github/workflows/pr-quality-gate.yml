@@ -68,7 +68,8 @@ jobs:
 
           # テストとカバレッジ（並列実行）
           echo "::group::テストとカバレッジ"
-          if ! uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60 --junit-xml=pytest-results.xml -n auto; then
+          if ! uv run pytest --cov=src --cov-report=term-missing \
+            --cov-fail-under=60 --junit-xml=pytest-results.xml -n auto; then
             echo "test_failed=true" >> $GITHUB_OUTPUT
             echo "❌ テストまたはカバレッジが基準を満たしていません"
           else
@@ -143,9 +144,10 @@ jobs:
               issue_number: context.issue.number,
             });
 
-            const botComment = comments.find(comment =>
-              comment.user.type === 'Bot' && comment.body.includes('🔍 品質チェック結果')
-            );
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' &&
+                comment.body.includes('🔍 品質チェック結果');
+            });
 
             if (botComment) {
               await github.rest.issues.updateComment({
@@ -169,7 +171,11 @@ jobs:
           test_failed: ${{ steps.quality_check.outputs.test_failed }}
 
       - name: 品質ゲート失敗時の終了
-        if: steps.quality_check.outputs.lint_failed == 'true' || steps.quality_check.outputs.format_failed == 'true' || steps.quality_check.outputs.type_failed == 'true' || steps.quality_check.outputs.test_failed == 'true'
+        if: >
+          steps.quality_check.outputs.lint_failed == 'true' ||
+          steps.quality_check.outputs.format_failed == 'true' ||
+          steps.quality_check.outputs.type_failed == 'true' ||
+          steps.quality_check.outputs.test_failed == 'true'
         run: |
           echo "❌ 品質ゲートが失敗しました。プルリクエストをマージする前に問題を修正してください。"
           exit 1

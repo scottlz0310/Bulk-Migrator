@@ -14,9 +14,9 @@ on:
           - 'codeql-only'
           - 'security-only'
           - 'sbom-only'
-  # 緊急時のみ自動実行
+# 緊急時のみ自動実行
   # push:
-  #   branches: [ main, develop ]
+  #   branches: [main, develop]
   # pull_request:
   #   branches: [ main, develop ]
   # schedule:
@@ -28,7 +28,10 @@ jobs:
     name: CodeQL セキュリティ分析
     runs-on: ubuntu-latest
     # 手動実行時のみ、かつcodeqlスキャンが選択された場合のみ実行
-    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == 'codeql-only')
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.scan_type == 'comprehensive' ||
+       github.event.inputs.scan_type == 'codeql-only')
 
     permissions:
       actions: read
@@ -38,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'python' ]
+        language: ['python']
 
     steps:
       - name: チェックアウト
@@ -68,13 +71,19 @@ jobs:
         if: steps.codeql-init.outcome != 'success'
         run: |
           echo "⚠️ CodeQL分析がスキップされました"
-          echo "理由: GitHub Advanced Securityが有効でないか、コードスキャニングが設定されていません"
-          echo "詳細: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/setting-up-code-scanning-for-a-repository"
+          echo "理由: GitHub Advanced Securityが有効でないか、"
+          echo "コードスキャニングが設定されていません"
+          url="https://docs.github.com/en/code-security/code-scanning"
+          path="automatically-scanning-your-code-for-vulnerabilities-and-errors"
+          echo "詳細: $url/$path/setting-up-code-scanning-for-a-repository"
 
   comprehensive-security-scan:
     name: 包括的セキュリティスキャン
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == 'security-only')
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.scan_type == 'comprehensive' ||
+       github.event.inputs.scan_type == 'security-only')
 
     permissions:
       contents: read
@@ -107,23 +116,26 @@ jobs:
       - name: セキュリティレポートの確認
         run: |
           echo "📄 セキュリティレポートを確認中..."
-          
+
           # レポートディレクトリの存在確認
           if [ ! -d "security_reports" ]; then
             echo "❌ security_reports ディレクトリが存在しません"
             exit 1
           fi
-          
+
           echo "📁 生成されたファイル:"
           ls -la security_reports/ || echo "ファイル一覧の取得に失敗"
-          
+
           if [ -f security_reports/security_summary.json ]; then
             echo "✅ セキュリティスキャン結果サマリー:"
             cat security_reports/security_summary.json | jq '.' || cat security_reports/security_summary.json
 
             # 脆弱性の数をチェック
-            bandit_issues=$(jq '.scan_results.bandit.issues_count // 0' security_reports/security_summary.json 2>/dev/null || echo "0")
-            audit_vulnerabilities=$(jq '.scan_results.pip_audit.vulnerabilities_count // 0' security_reports/security_summary.json 2>/dev/null || echo "0")
+            summary='security_reports/security_summary.json'
+            bandit_issues=$(jq '.scan_results.bandit.issues_count // 0' \
+              $summary 2>/dev/null || echo "0")
+            audit_vulnerabilities=$(jq '.scan_results.pip_audit.vulnerabilities_count // 0' \
+              $summary 2>/dev/null || echo "0")
 
             echo "Bandit 問題数: $bandit_issues"
             echo "pip-audit 脆弱性数: $audit_vulnerabilities"
@@ -137,24 +149,26 @@ jobs:
             fi
           else
             echo "⚠️  security_summary.json が見つかりません。個別レポートを確認します..."
-            
+
             # 個別レポートの確認
             bandit_issues=0
             audit_vulnerabilities=0
-            
+
             if [ -f security_reports/bandit_report.json ]; then
-              bandit_issues=$(jq '.results | length' security_reports/bandit_report.json 2>/dev/null || echo "0")
+              bandit_issues=$(jq '.results | length' \
+                security_reports/bandit_report.json 2>/dev/null || echo "0")
               echo "Bandit レポートが見つかりました: $bandit_issues 件の問題"
             fi
-            
+
             if [ -f security_reports/pip_audit_report.json ]; then
-              audit_vulnerabilities=$(jq '.vulnerabilities | length' security_reports/pip_audit_report.json 2>/dev/null || echo "0")
+              audit_vulnerabilities=$(jq '.vulnerabilities | length' \
+                security_reports/pip_audit_report.json 2>/dev/null || echo "0")
               echo "pip-audit レポートが見つかりました: $audit_vulnerabilities 件の脆弱性"
             fi
-            
+
             echo "Bandit 問題数: $bandit_issues"
             echo "pip-audit 脆弱性数: $audit_vulnerabilities"
-            
+
             if [ "$bandit_issues" -gt 0 ] || [ "$audit_vulnerabilities" -gt 0 ]; then
               echo "⚠️  セキュリティ問題が検出されました"
             else
@@ -193,7 +207,10 @@ jobs:
   sbom-generation:
     name: SBOM 生成
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.scan_type == 'comprehensive' || github.event.inputs.scan_type == 'sbom-only')
+    if: >
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.scan_type == 'comprehensive' ||
+       github.event.inputs.scan_type == 'sbom-only')
 
     permissions:
       contents: read

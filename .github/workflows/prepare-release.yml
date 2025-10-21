@@ -9,9 +9,9 @@ on:
         default: 'patch'
         type: choice
         options:
-        - patch
-        - minor
-        - major
+          - patch
+          - minor
+          - major
       prerelease:
         description: 'プレリリース'
         required: false
@@ -168,13 +168,13 @@ jobs:
           git add pyproject.toml CHANGELOG.md
           git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
           git tag ${{ steps.version.outputs.tag_name }}
-          
+
           echo "📤 メインブランチをプッシュ中..."
           git push origin main
-          
+
           echo "🏷️ タグをプッシュ中..."
           git push origin ${{ steps.version.outputs.tag_name }}
-          
+
           echo "✅ プッシュ完了"
 
       - name: リリース準備完了通知
