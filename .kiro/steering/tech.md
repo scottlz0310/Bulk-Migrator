@@ -1,4 +1,4 @@
-# 技術スタック v1.0
+# 技術スタック
 
 ## 必須スタック
 - **Python**: 3.11+ （pyproject.toml: `requires-python = ">=3.11"`）
