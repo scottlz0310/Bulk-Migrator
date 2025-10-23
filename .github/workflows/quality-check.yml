@@ -24,9 +24,9 @@ jobs:
 
     permissions:
       contents: read
-      pull-requests: write
+      pull-requests: write  # PRイベント時のみ有効
       security-events: write
-      checks: write
+      checks: write  # スケジュール実行時も有効
 
     steps:
       - name: チェックアウト
@@ -95,7 +95,7 @@ jobs:
 
       - name: テスト結果レポート
         uses: dorny/test-reporter@v2
-        if: success() || failure()
+        if: (success() || failure()) && github.event_name != 'schedule'
         continue-on-error: true
         with:
           name: テスト結果 (${{ matrix.os }}, Python ${{ matrix.python-version }})
