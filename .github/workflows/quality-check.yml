@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: チェックアウト
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # 完全な履歴を取得
 
       - name: Python ${{ matrix.python-version }} セットアップ
         uses: actions/setup-python@v6
@@ -45,6 +47,15 @@ jobs:
           cache-dependency-glob: |
             pyproject.toml
             uv.lock
+
+      - name: 環境情報の表示
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Python: ${{ matrix.python-version }}"
+          echo "OS: ${{ matrix.os }}"
+          ls -la
 
       - name: 依存関係インストール
         run: uv sync --python ${{ matrix.python-version }}
