@@ -70,7 +70,7 @@ jobs:
         run: |
           echo "品質チェック結果の確認"
           if [ "${{ job.status }}" != "success" ]; then
-            echo "❌ 品質チェックが失敗しました。以下を確認してください："
+            echo "❌ 品質チェックが失敗しました。以下を確認してください:"
             echo "  - ruff check でリンティングエラーがないか"
             echo "  - ruff format でフォーマットが正しいか"
             echo "  - mypy で型エラーがないか"
