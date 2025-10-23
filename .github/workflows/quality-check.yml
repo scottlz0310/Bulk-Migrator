@@ -5,9 +5,6 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
-  schedule:
-    # 毎日午前2時（UTC）に実行
-    - cron: '0 2 * * *'
 
 jobs:
   quality-check:
@@ -24,15 +21,13 @@ jobs:
 
     permissions:
       contents: read
-      pull-requests: write  # PRイベント時のみ有効
+      pull-requests: write
       security-events: write
-      checks: write  # スケジュール実行時も有効
+      checks: write
 
     steps:
       - name: チェックアウト
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0  # 完全な履歴を取得
 
       - name: Python ${{ matrix.python-version }} セットアップ
         uses: actions/setup-python@v6
@@ -47,15 +42,6 @@ jobs:
           cache-dependency-glob: |
             pyproject.toml
             uv.lock
-
-      - name: 環境情報の表示
-        run: |
-          echo "Event: ${{ github.event_name }}"
-          echo "Branch: ${{ github.ref }}"
-          echo "Commit: ${{ github.sha }}"
-          echo "Python: ${{ matrix.python-version }}"
-          echo "OS: ${{ matrix.os }}"
-          ls -la
 
       - name: 依存関係インストール
         run: uv sync --python ${{ matrix.python-version }}
@@ -106,7 +92,7 @@ jobs:
 
       - name: テスト結果レポート
         uses: dorny/test-reporter@v2
-        if: (success() || failure()) && github.event_name != 'schedule'
+        if: success() || failure()
         continue-on-error: true
         with:
           name: テスト結果 (${{ matrix.os }}, Python ${{ matrix.python-version }})
