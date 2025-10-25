@@ -2,6 +2,7 @@ import json
 import os
 from typing import Any
 
+import requests
 from dotenv import load_dotenv
 
 from src.skiplist import save_skip_list
@@ -264,3 +265,81 @@ def rebuild_skiplist_interactive() -> None:
         _handle_filelist_rebuild()
     else:
         pass
+
+
+def _check_graph_endpoint(label: str, url: str, headers: dict[str, str]) -> tuple[bool, str]:
+    """Graph API エンドポイントの疎通確認を実行"""
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+    except requests.RequestException as exc:  # リクエスト系の例外のみ捕捉
+        return False, f"[ERROR] {label}: {exc}"
+
+    if response.ok:
+        return True, f"[OK] {label}"
+
+    detail = response.text.strip().replace("\n", " ")
+    if len(detail) > 120:
+        detail = detail[:120] + "..."
+    return False, f"[ERROR] {label}: HTTP {response.status_code} {detail}"
+
+
+def validate_configuration() -> tuple[bool, list[str]]:
+    """環境変数とMicrosoft Graph疎通を確認"""
+    messages: list[str] = []
+    success = True
+
+    required_env = [
+        "CLIENT_ID",
+        "CLIENT_SECRET",
+        "TENANT_ID",
+        "DESTINATION_SHAREPOINT_SITE_ID",
+        "DESTINATION_SHAREPOINT_DRIVE_ID",
+    ]
+
+    missing = [name for name in required_env if not os.getenv(name)]
+    if missing:
+        messages.append("[ERROR] Missing environment variables: " + ", ".join(sorted(missing)))
+        return False, messages
+
+    try:
+        client = create_transfer_client()
+    except ValueError as exc:
+        messages.append(f"[ERROR] {exc}")
+        return False, messages
+    except Exception as exc:  # noqa: BLE001 - 予期せぬ例外をそのまま表示したい
+        messages.append(f"[ERROR] Failed to initialize GraphTransferClient: {exc}")
+        return False, messages
+
+    messages.append("[OK] Required environment variables are set.")
+
+    try:
+        token = client.auth.get_access_token()
+    except Exception as exc:  # noqa: BLE001 - 認証例外をそのまま返す
+        messages.append(f"[ERROR] Failed to acquire access token: {exc}")
+        return False, messages
+
+    messages.append("[OK] Access token acquired.")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    sharepoint_url = f"{client.base_url}/sites/{client.site_id}/drives/{client.drive_id}"
+    sharepoint_ok, sharepoint_msg = _check_graph_endpoint("SharePoint drive access", sharepoint_url, headers)
+    messages.append(sharepoint_msg)
+    success &= sharepoint_ok
+
+    onedrive_drive_id = os.getenv("SOURCE_ONEDRIVE_DRIVE_ID")
+    if onedrive_drive_id:
+        onedrive_url = f"{client.base_url}/drives/{onedrive_drive_id}"
+        drive_ok, drive_msg = _check_graph_endpoint("OneDrive drive access", onedrive_url, headers)
+        messages.append(drive_msg)
+        success &= drive_ok
+    else:
+        user_principal_name = os.getenv("SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME")
+        if user_principal_name:
+            user_url = f"{client.base_url}/users/{user_principal_name}"
+            user_ok, user_msg = _check_graph_endpoint("OneDrive user lookup", user_url, headers)
+            messages.append(user_msg)
+            success &= user_ok
+        else:
+            messages.append("[WARN] SOURCE_ONEDRIVE_DRIVE_ID と SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME が未設定です。")
+
+    return bool(success), messages

@@ -26,6 +26,7 @@ import os
 import sys
 
 from dotenv import load_dotenv
+from rich.console import Console
 
 # プロジェクトルートの.envを必ず読み込む（OS環境変数優先、なければ.env）
 env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
@@ -34,10 +35,11 @@ load_dotenv(env_path, override=False)
 # srcディレクトリから実行する場合のパス調整
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
-sys.path.insert(0, parent_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 
 # パス調整後にローカルモジュールをインポート
-from file_crawler import (  # noqa: E402
+from utils.file_crawler import (  # noqa: E402
     build_skiplist_from_filelist,
     build_skiplist_from_sharepoint,
     compare_file_counts,
@@ -46,6 +48,7 @@ from file_crawler import (  # noqa: E402
     load_file_list,
     rebuild_skiplist_interactive,
     save_file_list,
+    validate_configuration,
 )
 
 
@@ -111,6 +114,17 @@ def cmd_compare(args):
 def cmd_interactive(args):
     """対話型スキップリスト再構築実行"""
     rebuild_skiplist_interactive()
+
+
+def cmd_validate(args):
+    """環境変数とGraph APIアクセスの検証"""
+    console = Console()
+    ok, messages = validate_configuration()
+    for message in messages:
+        console.print(message)
+
+    if not ok:
+        sys.exit(1)
 
 
 def cmd_explore(args):
@@ -194,6 +208,10 @@ def main():
     # 対話型コマンド
     parser_interactive = subparsers.add_parser("interactive", help="対話型スキップリスト再構築")
     parser_interactive.set_defaults(func=cmd_interactive)
+
+    # 設定検証コマンド
+    parser_validate = subparsers.add_parser("validate", help="環境変数とAPIアクセスを検証")
+    parser_validate.set_defaults(func=cmd_validate)
 
     args = parser.parse_args()
 

@@ -9,6 +9,9 @@
 
 ---
 
+> ℹ️ 2023年以降、Azure Active Directory は **Microsoft Entra ID** に名称変更されています。
+> ポータル内の一部メニューでは旧名称が表示される場合がありますが、本ガイドでは最新の名称を使用します。
+
 ## 📋 セットアップの全体像
 
 1. ✅ Azureポータルでアプリ登録（10分）
@@ -23,10 +26,10 @@
 ### 手順
 
 1. [Azure Portal](https://portal.azure.com/) に**管理者アカウント**でログイン
-   - ⚠️ 注意：一般ユーザーではなく、Azure ADの管理者権限が必要です
+   - ⚠️ 注意：一般ユーザーではなく、Microsoft Entra ID の管理者権限が必要です
 
-2. 左メニューから「**Azure Active Directory**」を選択
-   - 見つからない場合：画面上部の検索ボックスで「Azure Active Directory」と検索
+2. 左メニューから「**Microsoft Entra ID**」（旧 Azure Active Directory）を選択
+   - 見つからない場合：画面上部の検索ボックスで「Entra ID」または「Azure Active Directory」と検索
 
 3. 「**アプリの登録**」→「**新規登録**」をクリック
 
@@ -115,78 +118,80 @@ User.Read.All
 ### 3.1 OneDriveのDrive ID取得
 
 1. Graph Explorerにアクセスし、「**サインイン**」
-   - 先ほど権限を付与したアカウントでサインイン
+   - 先ほど権限を付与したアカウントでサインインします。
+2. 画面左上で HTTP メソッドに **GET**、バージョンドロップダウンに **v1.0** を選択します。
+3. アドレス欄に次の URL を入力し、`{userPrincipalName}` を実際のメールアドレスに置き換えます。
 
-2. 以下のクエリを実行：
-```
-   GET /users/{userPrincipalName}/drive
-```
-   - `{userPrincipalName}` の部分を実際のメールアドレスに置き換え
-   - 例：`GET /users/tanaka@yourcompany.onmicrosoft.com/drive`
+   ```http
+   https://graph.microsoft.com/v1.0/users/{userPrincipalName}/drive
+   ```
 
-3. 「**クエリの実行**」をクリック
+   例：`https://graph.microsoft.com/v1.0/users/tanaka@yourcompany.onmicrosoft.com/drive`
 
-4. レスポンスから`id`をコピー：
-```json
+4. 「**Run query**」（▷）をクリックします。
+5. レスポンスから `id` をコピーします。
+
+   ```json
    {
      "id": "b!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
      ...
    }
-```
+   ```
 
-5. .envに記入：
-```ini
+6. 以下を `.env` に記入します。
+
+   ```ini
    SOURCE_ONEDRIVE_DRIVE_ID="b!xxxxxxxxxx..."
    SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME="tanaka@yourcompany.onmicrosoft.com"
-```
+   ```
 
 ### 3.2 SharePointのSite ID取得
 
-1. Graph Explorerで以下のクエリを実行：
-```
-   GET /sites/{domain}.sharepoint.com:/sites/{site-path}
-```
-   - 例：`GET /sites/yourcompany.sharepoint.com:/sites/ProjectA`
+1. Graph Explorerでサインイン済みであることを確認し、HTTP メソッドを **GET**、バージョンを **v1.0** に設定します。
+2. アドレス欄に次の URL を入力し、`{domain}` と `{site-path}` を自社環境に合わせて置き換えます。
 
-2. レスポンスから`id`をコピー
+   ```http
+   https://graph.microsoft.com/v1.0/sites/{domain}.sharepoint.com:/sites/{site-path}
+   ```
 
-3. .envに記入：
-```ini
+   例：`https://graph.microsoft.com/v1.0/sites/yourcompany.sharepoint.com:/sites/ProjectA`
+
+3. 「**Run query**」（▷）をクリックします。
+4. レスポンスから `id` をコピーし、以下を `.env` に記入します。
+
+   ```ini
    DESTINATION_SHAREPOINT_SITE_ID="xxxxxxxxxx..."
    DESTINATION_SHAREPOINT_HOST_NAME="yourcompany.sharepoint.com"
    DESTINATION_SHAREPOINT_SITE_PATH="sites/ProjectA"
-```
+   ```
 
 ### 3.3 SharePointのDrive ID取得
 
-1. Graph Explorerで以下のクエリを実行：
-```
-   GET /sites/{site-id}/drives
-```
-   - `{site-id}` には前のステップで取得したSite IDを使用
+1. Graph Explorerで HTTP メソッドを **GET**、バージョンを **v1.0** に設定します。
+2. アドレス欄に次の URL を入力し、`{site-id}` を前のステップで取得した値に置き換えます。
 
-2. レスポンスから、目的のドキュメントライブラリの`id`をコピー
-   - 通常、`name`が「ドキュメント」または「Documents」のもの
+   ```http
+   https://graph.microsoft.com/v1.0/sites/{site-id}/drives
+   ```
 
-3. .envに記入：
-```ini
+3. 「**Run query**」（▷）をクリックします。
+4. レスポンスから目的のドキュメントライブラリの `id` をコピーし、以下を `.env` に記入します。
+
+   ```ini
    DESTINATION_SHAREPOINT_DRIVE_ID="b!xxxxxxxxxx..."
    DESTINATION_SHAREPOINT_DOCLIB="ドキュメント"
-```
+   ```
 
 ---
 
 ## 4. .envファイルへの記入
 
-`sample.env`をコピーして`.env`を作成し、取得した値を記入します。
-
 ### 完成例
+
 ```ini
-# Azure AD App
+# Microsoft Entra ID App（旧 Azure AD）
 CLIENT_ID="12345678-1234-1234-1234-123456789abc"
 CLIENT_SECRET="abcdefghijklmnopqrstuvwxyz123456"
-TENANT_ID="87654321-4321-4321-4321-cba987654321"
-
 # Source (OneDrive)
 SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME="tanaka@yourcompany.onmicrosoft.com"
 SOURCE_ONEDRIVE_FOLDER_PATH="Documents/移行対象フォルダ"
@@ -206,6 +211,7 @@ DESTINATION_SHAREPOINT_FOLDER_PATH="移行先フォルダ"
 ## 5. 設定の確認
 
 ### テスト実行
+
 ```bash
 # 設定が正しいか確認
 uv run python -m utils.file_crawler_cli validate
@@ -223,6 +229,7 @@ uv run python -m utils.file_crawler_cli migrate --dry-run
 **原因：** API権限の管理者同意が完了していない
 
 **解決策：**
+
 1. Azure Portalのアプリ登録画面へ
 2. 「APIのアクセス許可」を確認
 3. 「管理者の同意を与える」を再度クリック
@@ -235,6 +242,7 @@ uv run python -m utils.file_crawler_cli migrate --dry-run
 **原因：** Drive IDが間違っている、またはユーザーにOneDriveが割り当てられていない
 
 **解決策：**
+
 1. Graph Explorerで`GET /users/{UPN}/drive`を再実行
 2. エラーが出る場合、該当ユーザーにOneDriveライセンスが割り当てられているか確認
 3. UPNが正しいか確認（メールアドレスと同じとは限らない）
@@ -246,6 +254,7 @@ uv run python -m utils.file_crawler_cli migrate --dry-run
 **原因：** CLIENT_SECRETが間違っている、または期限切れ
 
 **解決策：**
+
 1. Azure Portalで新しいクライアントシークレットを作成
 2. 生成された値を.envに貼り付け
 3. **重要：** 前後に余分なスペースがないか確認
@@ -255,9 +264,10 @@ uv run python -m utils.file_crawler_cli migrate --dry-run
 ### Drive IDの探し方が分からない
 
 **簡単な方法：**
+
 1. OneDriveまたはSharePointをブラウザで開く
 2. URLをコピー
-3. サポート（scott.lz0310@gmail.com）にURLを送信
+3. サポート（<mailto:scott.lz0310@gmail.com>）にURLを送信
 4. Drive IDを調べてお伝えします（無料）
 
 ---
@@ -265,14 +275,16 @@ uv run python -m utils.file_crawler_cli migrate --dry-run
 ## 📞 サポート
 
 分からないことがあれば、お気軽にお問い合わせください：
-- Email: scott.lz0310@gmail.com
+
+- Email: <mailto:scott.lz0310@gmail.com>
 - 対応時間：平日 9:00-18:00（日本時間）
 - 初回セットアップサポートは無料
 
 ---
 
 ## ⚠️ セキュリティに関する注意
-```
+
+```text
 🔒 絶対に守ること：
 - .envファイルをGitにコミットしない
 - CLIENT_SECRETを他人に教えない
@@ -288,6 +300,7 @@ uv run python -m utils.file_crawler_cli migrate --dry-run
 ## 🎯 次のステップ
 
 セットアップが完了したら：
+
 1. [README.md](README.md) で使い方を確認
 2. 小規模なテスト移行から開始（1-5GB推奨）
 3. 問題なければ本番移行へ
