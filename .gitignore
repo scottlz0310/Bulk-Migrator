@@ -199,3 +199,9 @@ yarn-error.log*
 *.test
 go.work
 vendor/
+
+# ci-helper
+.ci-helper/
+.actrc
+ci-helper.toml
+.env
