@@ -53,7 +53,7 @@ class SecurityAuditor:
         patterns = [".env", "secret", "key", "credential"]
         if any(pattern in file_path.lower() for pattern in patterns):
             self.audit_logger.warning(
-                ("SENSITIVE_FILE_ACCESS - User: %s, Operation: %s, " "File: %s, PID: %s"),
+                ("SENSITIVE_FILE_ACCESS - User: %s, Operation: %s, File: %s, PID: %s"),
                 user,
                 operation,
                 self._mask_path(file_path),
@@ -127,7 +127,7 @@ class SecurityAuditor:
                         stored_hash = hf.read().strip()
 
                     if stored_hash != file_hash:
-                        alert = "INTEGRITY_VIOLATION: " f"{file_path} has been modified"
+                        alert = f"INTEGRITY_VIOLATION: {file_path} has been modified"
                         alerts.append(alert)
                         self.audit_logger.critical(alert)
 
