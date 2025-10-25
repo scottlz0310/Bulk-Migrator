@@ -4,6 +4,29 @@
 
 ---
 
+
+## 2.4.0 - 2025-10-25
+
+### Changes
+
+- feat: Typerを使用したCLIエントリポイントの実装とREADMEの更新 (f8eb164)
+- feat: Microsoft Graph APIの疎通確認と設定検証機能を追加 (b612e5a)
+- fix: 修正されたログメッセージのフォーマットと整合性違反の警告を改善 (1cee2b6)
+- feat: ci-helperの設定ファイルと関連ディレクトリを追加 (5fccbf3)
+- chore: reformat codebase for lint compliance (caafd20)
+- feat: Implement comprehensive security checks and audits (289edfe)
+- Merge branch 'main' of github.com:scottlz0310/Bulk-Migrator (f85dfa1)
+- refactor: スケジュール実行の設定を削除し、環境情報の表示ステップを削除 (18561fe)
+- chore: プライベートリポジトリのためスケジュール実行を削除 (7725e91)
+- feat: 環境情報の表示ステップを追加 (ec47fca)
+- refactor: permissionsセクションのコメントを追加し、テスト結果レポートの条件を修正 (a603e96)
+- refactor: 技術スタックのバージョン表記を削除 (96543c3)
+- refactor: 技術スタックのセクションを整理し、必須スタックとCLIスタックを明確化 (50afdfa)
+- feat: Setup Assistantの実装計画を追加 (v2.4.0) (34d469f)
+- chore: README.mdのバージョンを2.3.6に更新 (e803c84)
+- refactor: README.mdの内容を整理し、バージョンを2.3.5に更新 (caf926c)
+- docs: update documentation for v2.3.6 (326719b)
+
 **完全な変更履歴**: https://github.com/scottlz0310/Bulk-Migrator/compare/v2.3.6...v2.3.6
 
 
