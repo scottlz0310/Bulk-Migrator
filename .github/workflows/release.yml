@@ -1,13 +1,13 @@
-name: リリース自動化
+﻿name: リリース自動化
 
 on:
   push:
     tags:
-      - 'v*'  # タグプッシュ時のみ自動リリース
+      - 'v*'  # タグプッシュ時�Eみ自動リリース
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'リリースタイプ'
+        description: 'リリースタイチE
         required: true
         default: 'patch'
         type: choice
@@ -23,63 +23,63 @@ on:
 
 jobs:
   create-release:
-    name: リリース作成
+    name: リリース作�E
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
 
     steps:
-      - name: チェックアウト
+      - name: チェチE��アウチE
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Python セットアップ
+      - name: Python セチE��アチE�E
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
-      - name: uv セットアップ
+      - name: uv セチE��アチE�E
         uses: astral-sh/setup-uv@v7
 
-      - name: タグからバージョンを取得
+      - name: タグからバ�Eジョンを取征E
         id: version
         run: |
-          # タグからバージョンを取得（v プレフィックスを除去）
+          # タグからバ�Eジョンを取得！E プレフィチE��スを除去�E�E
           tag_name="${{ github.ref_name }}"
           version="${tag_name#v}"
-          echo "バージョン: $version"
+          echo "バ�Eジョン: $version"
           echo "タグ: $tag_name"
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "tag_name=$tag_name" >> $GITHUB_OUTPUT
 
-      - name: リリースノート生成
+      - name: リリースノ�Eト生戁E
         id: release_notes
         run: |
-          # 最新のタグを取得
+          # 最新のタグを取征E
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
-          # コミットメッセージからリリースノートを生成
+          # コミットメチE��ージからリリースノ�Eトを生�E
           if [ -n "$latest_tag" ]; then
             commits=$(git log ${latest_tag}..HEAD --oneline --pretty=format:"- %s")
           else
             commits=$(git log --oneline --pretty=format:"- %s")
           fi
 
-          # カテゴリ別に分類
+          # カチE��リ別に刁E��E
           features=$(echo "$commits" | grep "^- feat\|^- feature" || true)
           fixes=$(echo "$commits" | grep "^- fix\|^- bugfix" || true)
           docs=$(echo "$commits" | grep "^- docs" || true)
           others=$(echo "$commits" | grep -v "^- feat\|^- feature\|^- fix\|^- bugfix\|^- docs" || true)
 
-          # リリースノートを構築
+          # リリースノ�Eトを構篁E
           release_notes="## 🚀 リリース $version"
           release_notes="$release_notes\n\n"
 
           if [ -n "$features" ]; then
-            release_notes="$release_notes### ✨ 新機能\n$features\n\n"
+            release_notes="$release_notes### ✨ 新機�E\n$features\n\n"
           fi
 
           if [ -n "$fixes" ]; then
@@ -87,26 +87,26 @@ jobs:
           fi
 
           if [ -n "$docs" ]; then
-            release_notes="$release_notes### 📚 ドキュメント\n$docs\n\n"
+            release_notes="$release_notes### 📚 ドキュメンチEn$docs\n\n"
           fi
 
           if [ -n "$others" ]; then
-            release_notes="$release_notes### 🔧 その他の変更\n$others\n\n"
+            release_notes="$release_notes### 🔧 そ�E他�E変更\n$others\n\n"
           fi
 
           release_notes="$release_notes---\n\n"
           url="https://github.com/${{ github.repository }}"
-          release_notes="$release_notes**完全な変更履歴**: "
+          release_notes="$release_notes**完�Eな変更履歴**: "
           release_notes="$release_notes$url/compare/${latest_tag}...${{ steps.version.outputs.tag_name }}"
 
-          # 改行文字をエスケープしてGitHub Outputに設定
+          # 改行文字をエスケープしてGitHub Outputに設宁E
           echo "release_notes<<EOF" >> $GITHUB_OUTPUT
           echo -e "$release_notes" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: CHANGELOG.md 更新
         run: |
-          # CHANGELOG.md が存在しない場合は作成
+          # CHANGELOG.md が存在しなぁE��合�E作�E
           if [ ! -f CHANGELOG.md ]; then
             echo "# Changelog" > CHANGELOG.md
             echo "" >> CHANGELOG.md
@@ -114,7 +114,7 @@ jobs:
             echo "" >> CHANGELOG.md
           fi
 
-          # 新しいエントリを CHANGELOG.md の先頭に挿入
+          # 新しいエントリめECHANGELOG.md の先頭に挿入
           temp_file=$(mktemp)
           echo "## [${{ steps.version.outputs.version }}] - $(date -u +%Y-%m-%d)" > "$temp_file"
           echo "" >> "$temp_file"
@@ -122,28 +122,28 @@ jobs:
           echo -e "$notes" | sed 's/^## 🚀 リリース [0-9.]*//' >> "$temp_file"
           echo "" >> "$temp_file"
 
-          # 既存の CHANGELOG.md の内容を追加（最初の行「# Changelog」以降）
+          # 既存�E CHANGELOG.md の冁E��を追加�E�最初�E行、E Changelog」以降！E
           if [ -f CHANGELOG.md ]; then
             tail -n +2 CHANGELOG.md >> "$temp_file"
           fi
 
           mv "$temp_file" CHANGELOG.md
 
-      - name: README.md バージョンバッジ更新
+      - name: README.md バ�Eジョンバッジ更新
         run: |
-          # README.md のバージョンバッジを更新
+          # README.md のバ�Eジョンバッジを更新
           if [ -f README.md ]; then
-            # バージョンバッジのパターンを更新
+            # バ�Eジョンバッジのパターンを更新
             sed -i "s/version-[0-9.]\+-/version-${{ steps.version.outputs.version }}-/g" README.md
             sed -i "s/v[0-9.]\+/v${{ steps.version.outputs.version }}/g" README.md
           fi
 
-      - name: ドキュメント更新をコミット
+      - name: ドキュメント更新をコミッチE
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          # main ブランチに切り替え
+          # main ブランチに刁E��替ぁE
           git checkout main
 
           git add CHANGELOG.md README.md
@@ -157,7 +157,7 @@ jobs:
             git push origin main
           fi
 
-      - name: GitHub Release 作成
+      - name: GitHub Release 作�E
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -175,8 +175,8 @@ jobs:
     if: always() && needs.create-release.result == 'success'
 
     steps:
-      - name: リリース完了通知
+      - name: リリース完亁E��知
         run: |
-          echo "🎉 リリース ${{ github.ref_name }} が正常に作成されました！"
-          echo "📋 リリースページ: https://github.com/${{ github.repository }}/releases"
+          echo "🎉 リリース ${{ github.ref_name }} が正常に作�Eされました�E�E
+          echo "📋 リリースペ�Eジ: https://github.com/${{ github.repository }}/releases"
           echo "🔗 タグ: ${{ github.ref_name }}"

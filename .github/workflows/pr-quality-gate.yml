@@ -1,4 +1,4 @@
-name: プルリクエスト品質ゲート
+﻿name: プルリクエスト品質ゲーチE
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   quality-gate:
-    name: 品質ゲート確認
+    name: 品質ゲート確誁E
     runs-on: ubuntu-latest
 
     permissions:
@@ -15,129 +15,129 @@ jobs:
       checks: write
 
     steps:
-      - name: チェックアウト
+      - name: チェチE��アウチE
         uses: actions/checkout@v5
 
-      - name: Python セットアップ
+      - name: Python セチE��アチE�E
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
 
-      - name: uv セットアップ
+      - name: uv セチE��アチE�E
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
-      - name: 依存関係インストール
+      - name: 依存関係インスト�Eル
         run: uv sync --python 3.13
 
-      - name: 品質チェック実行
+      - name: 品質チェチE��実衁E
         id: quality_check
         run: |
-          echo "品質チェックを実行中..."
+          echo "品質チェチE��を実行中..."
 
-          # リンティングチェック
-          echo "::group::リンティングチェック"
+          # リンチE��ングチェチE��
+          echo "::group::リンチE��ングチェチE��"
           if ! uv run ruff check .; then
             echo "lint_failed=true" >> $GITHUB_OUTPUT
-            echo "❌ リンティングエラーが検出されました"
+            echo "❁EリンチE��ングエラーが検�Eされました"
           else
-            echo "✅ リンティングチェック通過"
+            echo "✁EリンチE��ングチェチE��通過"
           fi
           echo "::endgroup::"
 
-          # フォーマットチェック
-          echo "::group::フォーマットチェック"
+          # フォーマットチェチE��
+          echo "::group::フォーマットチェチE��"
           if ! uv run ruff format --check .; then
             echo "format_failed=true" >> $GITHUB_OUTPUT
-            echo "❌ フォーマットエラーが検出されました"
+            echo "❁Eフォーマットエラーが検�Eされました"
           else
-            echo "✅ フォーマットチェック通過"
+            echo "✁EフォーマットチェチE��通過"
           fi
           echo "::endgroup::"
 
-          # 型チェック
-          echo "::group::型チェック"
+          # 型チェチE��
+          echo "::group::型チェチE��"
           if ! uv run mypy .; then
             echo "type_failed=true" >> $GITHUB_OUTPUT
-            echo "❌ 型エラーが検出されました"
+            echo "❁E型エラーが検�Eされました"
           else
-            echo "✅ 型チェック通過"
+            echo "✁E型チェチE��通過"
           fi
           echo "::endgroup::"
 
-          # テストとカバレッジ（並列実行）
-          echo "::group::テストとカバレッジ"
+          # チE��トとカバレチE���E�並列実行！E
+          echo "::group::チE��トとカバレチE��"
           if ! uv run pytest --cov=src --cov-report=term-missing \
             --cov-fail-under=60 --junit-xml=pytest-results.xml -n auto; then
             echo "test_failed=true" >> $GITHUB_OUTPUT
-            echo "❌ テストまたはカバレッジが基準を満たしていません"
+            echo "❁EチE��トまた�EカバレチE��が基準を満たしてぁE��せん"
           else
-            echo "✅ テストとカバレッジチェック通過"
+            echo "✁EチE��トとカバレチE��チェチE��通過"
           fi
           echo "::endgroup::"
 
-      - name: 品質ゲート結果コメント
+      - name: 品質ゲート結果コメンチE
         if: always()
         uses: actions/github-script@v7
         with:
           script: |
             const { lint_failed, format_failed, type_failed, test_failed } = process.env;
 
-            let comment = '## 🔍 品質チェック結果\n\n';
+            let comment = '## 🔍 品質チェチE��結果\n\n';
             let hasFailures = false;
 
-            // リンティング結果
+            // リンチE��ング結果
             if (lint_failed === 'true') {
-              comment += '❌ **リンティング**: エラーが検出されました\n';
+              comment += '❁E**リンチE��ング**: エラーが検�Eされました\n';
               comment += '   - `uv run ruff check .` を実行して修正してください\n\n';
               hasFailures = true;
             } else {
-              comment += '✅ **リンティング**: 通過\n\n';
+              comment += '✁E**リンチE��ング**: 通過\n\n';
             }
 
             // フォーマット結果
             if (format_failed === 'true') {
-              comment += '❌ **フォーマット**: エラーが検出されました\n';
+              comment += '❁E**フォーマッチE*: エラーが検�Eされました\n';
               comment += '   - `uv run ruff format .` を実行して修正してください\n\n';
               hasFailures = true;
             } else {
-              comment += '✅ **フォーマット**: 通過\n\n';
+              comment += '✁E**フォーマッチE*: 通過\n\n';
             }
 
-            // 型チェック結果
+            // 型チェチE��結果
             if (type_failed === 'true') {
-              comment += '❌ **型チェック**: エラーが検出されました\n';
+              comment += '❁E**型チェチE��**: エラーが検�Eされました\n';
               comment += '   - `uv run mypy .` を実行して型エラーを修正してください\n\n';
               hasFailures = true;
             } else {
-              comment += '✅ **型チェック**: 通過\n\n';
+              comment += '✁E**型チェチE��**: 通過\n\n';
             }
 
-            // テスト結果
+            // チE��ト結果
             if (test_failed === 'true') {
-              comment += '❌ **テスト・カバレッジ**: 基準を満たしていません\n';
-              comment += '   - テストが失敗しているか、カバレッジが60%未満です\n';
+              comment += '❁E**チE��ト�EカバレチE��**: 基準を満たしてぁE��せん\n';
+              comment += '   - チE��トが失敗してぁE��か、カバレチE��ぁE0%未満です\n';
               comment += '   - `uv run pytest --cov=src --cov-report=term-missing` を実行して確認してください\n\n';
               hasFailures = true;
             } else {
-              comment += '✅ **テスト・カバレッジ**: 通過（60%以上）\n\n';
+              comment += '✁E**チE��ト�EカバレチE��**: 通過�E�E0%以上）\n\n';
             }
 
             if (hasFailures) {
               comment += '---\n';
-              comment += '⚠️ **マージブロック**: 上記の問題を修正してからマージしてください。\n';
-              comment += '\n### 修正手順\n';
-              comment += '1. ローカルで `make lint` または `uv run ruff check .` を実行\n';
-              comment += '2. `make format` または `uv run ruff format .` でフォーマット修正\n';
-              comment += '3. `make typecheck` または `uv run mypy .` で型エラー確認\n';
-              comment += '4. `make test` または `uv run pytest` でテスト実行\n';
-              comment += '5. 修正後にコミット・プッシュ\n';
+              comment += '⚠�E�E**マ�EジブロチE��**: 上記�E問題を修正してからマ�Eジしてください、En';
+              comment += '\n### 修正手頁En';
+              comment += '1. ローカルで `make lint` また�E `uv run ruff check .` を実行\n';
+              comment += '2. `make format` また�E `uv run ruff format .` でフォーマット修正\n';
+              comment += '3. `make typecheck` また�E `uv run mypy .` で型エラー確認\n';
+              comment += '4. `make test` また�E `uv run pytest` でチE��ト実行\n';
+              comment += '5. 修正後にコミット�Eプッシュ\n';
             } else {
-              comment += '🎉 **全ての品質チェックが通過しました！マージ可能です。**\n';
+              comment += '🎉 **全ての品質チェチE��が通過しました�E��Eージ可能です、E*\n';
             }
 
-            // 既存のコメントを探して更新、なければ新規作成
+            // 既存�Eコメントを探して更新、なければ新規作�E
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -146,7 +146,7 @@ jobs:
 
             const botComment = comments.find(comment => {
               return comment.user.type === 'Bot' &&
-                comment.body.includes('🔍 品質チェック結果');
+                comment.body.includes('🔍 品質チェチE��結果');
             });
 
             if (botComment) {
@@ -170,12 +170,12 @@ jobs:
           type_failed: ${{ steps.quality_check.outputs.type_failed }}
           test_failed: ${{ steps.quality_check.outputs.test_failed }}
 
-      - name: 品質ゲート失敗時の終了
+      - name: 品質ゲート失敗時の終亁E
         if: >
           steps.quality_check.outputs.lint_failed == 'true' ||
           steps.quality_check.outputs.format_failed == 'true' ||
           steps.quality_check.outputs.type_failed == 'true' ||
           steps.quality_check.outputs.test_failed == 'true'
         run: |
-          echo "❌ 品質ゲートが失敗しました。プルリクエストをマージする前に問題を修正してください。"
+          echo "❁E品質ゲートが失敗しました。�Eルリクエストをマ�Eジする前に問題を修正してください、E
           exit 1

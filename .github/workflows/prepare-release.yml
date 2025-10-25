@@ -1,10 +1,10 @@
-name: リリース準備
+﻿name: リリース準備
 
 on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'リリースタイプ'
+        description: 'リリースタイチE
         required: true
         default: 'patch'
         type: choice
@@ -28,60 +28,60 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: チェックアウト
+      - name: チェチE��アウチE
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           persist-credentials: true
 
-      - name: Python セットアップ
+      - name: Python セチE��アチE�E
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
 
-      - name: uv セットアップ
+      - name: uv セチE��アチE�E
         uses: astral-sh/setup-uv@v7
 
-      - name: 依存関係インストール
+      - name: 依存関係インスト�Eル
         run: |
           uv venv --python 3.13
           uv sync
 
-      - name: 品質チェック実行
+      - name: 品質チェチE��実衁E
         run: |
-          echo "リリース前の品質チェックを実行中..."
+          echo "リリース前�E品質チェチE��を実行中..."
 
-          # リンティング
-          echo "::group::リンティングチェック"
+          # リンチE��ング
+          echo "::group::リンチE��ングチェチE��"
           uv run ruff check .
           echo "::endgroup::"
 
-          # フォーマット
-          echo "::group::フォーマットチェック"
+          # フォーマッチE
+          echo "::group::フォーマットチェチE��"
           uv run ruff format --check .
           echo "::endgroup::"
 
-          # 型チェック
-          echo "::group::型チェック"
+          # 型チェチE��
+          echo "::group::型チェチE��"
           uv run mypy .
           echo "::endgroup::"
 
-          # テスト
-          echo "::group::テスト実行"
+          # チE��チE
+          echo "::group::チE��ト実衁E
           uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=60 --junit-xml=pytest-results.xml
           echo "::endgroup::"
 
-          echo "✅ 全ての品質チェックが通過しました"
+          echo "✁E全ての品質チェチE��が通過しました"
 
-      - name: バージョン計算
+      - name: バ�Eジョン計箁E
         id: version
         run: |
-          # 現在のバージョンを取得
+          # 現在のバ�Eジョンを取征E
           current_version=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
-          echo "現在のバージョン: $current_version"
+          echo "現在のバ�Eジョン: $current_version"
 
-          # セマンティックバージョニングに基づいて新しいバージョンを計算
+          # セマンチE��チE��バ�Eジョニングに基づぁE��新しいバ�Eジョンを計箁E
           IFS='.' read -ra VERSION_PARTS <<< "$current_version"
           major=${VERSION_PARTS[0]}
           minor=${VERSION_PARTS[1]}
@@ -106,23 +106,23 @@ jobs:
 
           new_version="$major.$minor.$patch"
 
-          # プレリリースの場合
+          # プレリリースの場吁E
           if [ "${{ github.event.inputs.prerelease }}" = "true" ]; then
             new_version="$new_version-rc.$(date +%Y%m%d%H%M%S)"
           fi
 
-          echo "新しいバージョン: $new_version"
+          echo "新しいバ�Eジョン: $new_version"
           echo "new_version=$new_version" >> $GITHUB_OUTPUT
           echo "tag_name=v$new_version" >> $GITHUB_OUTPUT
 
-      - name: pyproject.toml のバージョン更新
+      - name: pyproject.toml のバ�Eジョン更新
         run: |
           sed -i 's/^version = ".*"/version = "${{ steps.version.outputs.new_version }}"/' pyproject.toml
-          echo "pyproject.toml のバージョンを更新しました"
+          echo "pyproject.toml のバ�Eジョンを更新しました"
 
       - name: CHANGELOG.md の更新
         run: |
-          # CHANGELOGが存在しない場合は作成
+          # CHANGELOGが存在しなぁE��合�E作�E
           if [ ! -f CHANGELOG.md ]; then
             cat > CHANGELOG.md << 'EOF'
           # Changelog
@@ -135,10 +135,10 @@ jobs:
           EOF
           fi
 
-          # 最新のタグを取得
+          # 最新のタグを取征E
           latest_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 
-          # コミットメッセージからリリースノートを生成
+          # コミットメチE��ージからリリースノ�Eトを生�E
           if [ -n "$latest_tag" ]; then
             commits=$(git log ${latest_tag}..HEAD --oneline --pretty=format:"- %s (%h)")
           else
@@ -152,7 +152,7 @@ jobs:
             echo ""
             echo "## [${{ steps.version.outputs.new_version }}] - $(date +%Y-%m-%d)"
             echo ""
-            echo "### 変更内容"
+            echo "### 変更冁E��"
             echo ""
             echo "$commits"
             echo ""
@@ -160,7 +160,7 @@ jobs:
           } > "$temp_file"
           mv "$temp_file" CHANGELOG.md
 
-      - name: 変更をコミットしてタグを作成
+      - name: 変更をコミットしてタグを作�E
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
@@ -171,17 +171,17 @@ jobs:
           echo "📤 メインブランチをプッシュ中..."
           git push origin main
 
-          echo "🏷️ タグをプッシュ中..."
+          echo "🏷�E�Eタグを�EチE��ュ中..."
           git push origin ${{ steps.version.outputs.tag_name }}
 
-          echo "⚠️ 注意: リリース自動化を発火させるにはPAT_TOKENシークレットが必要です"
-          echo "設定されていない場合は手動でリリースワークフローを実行してください"
+          echo "⚠�E�E注愁E リリース自動化を発火させるにはPAT_TOKENシークレチE��が忁E��でぁE
+          echo "設定されてぁE��ぁE��合�E手動でリリースワークフローを実行してください"
 
-          echo "✅ プッシュ完了"
+          echo "✁Eプッシュ完亁E
 
-      - name: リリース準備完了通知
+      - name: リリース準備完亁E��知
         run: |
-          echo "🎉 リリース準備が完了しました！"
-          echo "📋 バージョン: ${{ steps.version.outputs.new_version }}"
-          echo "🏷️ タグ: ${{ steps.version.outputs.tag_name }}"
-          echo "🚀 タグがプッシュされたため、リリースワークフローが自動実行されます"
+          echo "🎉 リリース準備が完亁E��ました�E�E
+          echo "📋 バ�Eジョン: ${{ steps.version.outputs.new_version }}"
+          echo "🏷�E�Eタグ: ${{ steps.version.outputs.tag_name }}"
+          echo "🚀 タグが�EチE��ュされたため、リリースワークフローが�E動実行されまぁE

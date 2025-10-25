@@ -1,4 +1,4 @@
-name: Dependabot自動マージ
+﻿name: Dependabot自動�Eージ
 
 on:
   pull_request:
@@ -10,18 +10,18 @@ permissions:
 
 jobs:
   dependabot-auto-merge:
-    name: Dependabot自動マージ
+    name: Dependabot自動�Eージ
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]'
 
     steps:
-      - name: Dependabot メタデータ取得
+      - name: Dependabot メタチE�Eタ取征E
         id: metadata
         uses: dependabot/fetch-metadata@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 自動承認とマージ（パッチ・マイナーアップデート）
+      - name: 自動承認とマ�Eジ�E�パチE��・マイナ�EアチE�EチE�Eト！E
         if: >
           steps.metadata.outputs.update-type == 'version-update:semver-patch' ||
           steps.metadata.outputs.update-type == 'version-update:semver-minor'
@@ -32,17 +32,17 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: メジャーアップデート通知
+      - name: メジャーアチE�EチE�Eト通知
         if: steps.metadata.outputs.update-type == 'version-update:semver-major'
         run: |
-          gh pr comment "$PR_URL" --body "⚠️ **メジャーアップデート検出**
+          gh pr comment "$PR_URL" --body "⚠�E�E**メジャーアチE�EチE�Eト検�E**
 
-          このPRはメジャーバージョンアップデートを含むため、手動レビューが必要です。
+          こ�EPRはメジャーバ�EジョンアチE�EチE�Eトを含むため、手動レビューが忁E��です、E
 
           - パッケージ: ${{ steps.metadata.outputs.dependency-names }}
-          - 更新タイプ: ${{ steps.metadata.outputs.update-type }}
+          - 更新タイチE ${{ steps.metadata.outputs.update-type }}
 
-          変更内容を確認し、破壊的変更がないことを確認してからマージしてください。"
+          変更冁E��を確認し、破壊的変更がなぁE��とを確認してからマ�Eジしてください、E
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

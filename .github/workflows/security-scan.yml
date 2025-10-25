@@ -1,11 +1,11 @@
-name: セキュリティスキャン
+﻿name: セキュリチE��スキャン
 
 on:
-  # 手動実行のみ（プライベートリポジトリのActions実行時間制約のため）
+  # 手動実行�Eみ�E��Eライベ�EトリポジトリのActions実行時間制紁E�Eため�E�E
   workflow_dispatch:
     inputs:
       scan_type:
-        description: 'スキャンタイプ'
+        description: 'スキャンタイチE
         required: true
         default: 'comprehensive'
         type: choice
@@ -14,20 +14,20 @@ on:
           - 'codeql-only'
           - 'security-only'
           - 'sbom-only'
-# 緊急時のみ自動実行
+# 緊急時�Eみ自動実衁E
   # push:
   #   branches: [main, develop]
   # pull_request:
   #   branches: [ main, develop ]
   # schedule:
-  #   # 毎週月曜日の午前3時（UTC）に実行
+  #   # 毎週月曜日の午前3時！ETC�E�に実衁E
   #   - cron: '0 3 * * 1'
 
 jobs:
   codeql:
-    name: CodeQL セキュリティ分析
+    name: CodeQL セキュリチE��刁E��
     runs-on: ubuntu-latest
-    # 手動実行時のみ、かつcodeqlスキャンが選択された場合のみ実行
+    # 手動実行時のみ、かつcodeqlスキャンが選択された場合�Eみ実衁E
     if: >
       github.event_name == 'workflow_dispatch' &&
       (github.event.inputs.scan_type == 'comprehensive' ||
@@ -44,10 +44,10 @@ jobs:
         language: ['python']
 
     steps:
-      - name: チェックアウト
+      - name: チェチE��アウチE
         uses: actions/checkout@v5
 
-      - name: CodeQL 初期化
+      - name: CodeQL 初期匁E
         id: codeql-init
         uses: github/codeql-action/init@v4
         with:
@@ -55,30 +55,30 @@ jobs:
           queries: security-extended,security-and-quality
         continue-on-error: true
 
-      - name: 自動ビルド
+      - name: 自動ビルチE
         if: steps.codeql-init.outcome == 'success'
         uses: github/codeql-action/autobuild@v4
         continue-on-error: true
 
-      - name: CodeQL 分析実行
+      - name: CodeQL 刁E��実衁E
         if: steps.codeql-init.outcome == 'success'
         uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{matrix.language}}"
         continue-on-error: true
 
-      - name: CodeQL スキップ通知
+      - name: CodeQL スキチE�E通知
         if: steps.codeql-init.outcome != 'success'
         run: |
-          echo "⚠️ CodeQL分析がスキップされました"
-          echo "理由: GitHub Advanced Securityが有効でないか、"
-          echo "コードスキャニングが設定されていません"
+          echo "⚠�E�ECodeQL刁E��がスキチE�Eされました"
+          echo "琁E��: GitHub Advanced Securityが有効でなぁE��、E
+          echo "コードスキャニングが設定されてぁE��せん"
           url="https://docs.github.com/en/code-security/code-scanning"
           path="automatically-scanning-your-code-for-vulnerabilities-and-errors"
           echo "詳細: $url/$path/setting-up-code-scanning-for-a-repository"
 
   comprehensive-security-scan:
-    name: 包括的セキュリティスキャン
+    name: 匁E��皁E��キュリチE��スキャン
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' &&
@@ -90,47 +90,47 @@ jobs:
       security-events: write
 
     steps:
-      - name: チェックアウト
+      - name: チェチE��アウチE
         uses: actions/checkout@v5
 
-      - name: Python セットアップ
+      - name: Python セチE��アチE�E
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
           allow-prereleases: true
 
-      - name: uv セットアップ
+      - name: uv セチE��アチE�E
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
-      - name: 依存関係インストール
+      - name: 依存関係インスト�Eル
         run: uv sync --python 3.13
 
-      - name: 包括的セキュリティスキャン実行
+      - name: 匁E��皁E��キュリチE��スキャン実衁E
         run: |
-          echo "🚀 セキュリティスキャンを開始します..."
+          echo "🚀 セキュリチE��スキャンを開始しまぁE.."
           uv run python scripts/security_scan.py --scan-type=all
         continue-on-error: true
 
-      - name: セキュリティレポートの確認
+      - name: セキュリチE��レポ�Eト�E確誁E
         run: |
-          echo "📄 セキュリティレポートを確認中..."
+          echo "📄 セキュリチE��レポ�Eトを確認中..."
 
-          # レポートディレクトリの存在確認
+          # レポ�Eトディレクトリの存在確誁E
           if [ ! -d "security_reports" ]; then
-            echo "❌ security_reports ディレクトリが存在しません"
+            echo "❁Esecurity_reports チE��レクトリが存在しません"
             exit 1
           fi
 
-          echo "📁 生成されたファイル:"
-          ls -la security_reports/ || echo "ファイル一覧の取得に失敗"
+          echo "📁 生�Eされたファイル:"
+          ls -la security_reports/ || echo "ファイル一覧の取得に失敁E
 
           if [ -f security_reports/security_summary.json ]; then
-            echo "✅ セキュリティスキャン結果サマリー:"
+            echo "✁EセキュリチE��スキャン結果サマリー:"
             cat security_reports/security_summary.json | jq '.' || cat security_reports/security_summary.json
 
-            # 脆弱性の数をチェック
+            # 脁E��性の数をチェチE��
             summary='security_reports/security_summary.json'
             bandit_issues=$(jq '.scan_results.bandit.issues_count // 0' \
               $summary 2>/dev/null || echo "0")
@@ -138,45 +138,45 @@ jobs:
               $summary 2>/dev/null || echo "0")
 
             echo "Bandit 問題数: $bandit_issues"
-            echo "pip-audit 脆弱性数: $audit_vulnerabilities"
+            echo "pip-audit 脁E��性数: $audit_vulnerabilities"
 
-            # セキュリティ問題の報告（警告レベル）
+            # セキュリチE��問題�E報告（警告レベル�E�E
             if [ "$bandit_issues" -gt 0 ] || [ "$audit_vulnerabilities" -gt 0 ]; then
-              echo "⚠️  セキュリティ問題が検出されました（警告レベル）"
-              echo "詳細はセキュリティレポートを確認してください"
+              echo "⚠�E�E セキュリチE��問題が検�Eされました�E�警告レベル�E�E
+              echo "詳細はセキュリチE��レポ�Eトを確認してください"
             else
-              echo "✅ セキュリティ問題は検出されませんでした"
+              echo "✁EセキュリチE��問題�E検�Eされませんでした"
             fi
           else
-            echo "⚠️  security_summary.json が見つかりません。個別レポートを確認します..."
+            echo "⚠�E�E security_summary.json が見つかりません。個別レポ�Eトを確認しまぁE.."
 
-            # 個別レポートの確認
+            # 個別レポ�Eト�E確誁E
             bandit_issues=0
             audit_vulnerabilities=0
 
             if [ -f security_reports/bandit_report.json ]; then
               bandit_issues=$(jq '.results | length' \
                 security_reports/bandit_report.json 2>/dev/null || echo "0")
-              echo "Bandit レポートが見つかりました: $bandit_issues 件の問題"
+              echo "Bandit レポ�Eトが見つかりました: $bandit_issues 件の問顁E
             fi
 
             if [ -f security_reports/pip_audit_report.json ]; then
               audit_vulnerabilities=$(jq '.vulnerabilities | length' \
                 security_reports/pip_audit_report.json 2>/dev/null || echo "0")
-              echo "pip-audit レポートが見つかりました: $audit_vulnerabilities 件の脆弱性"
+              echo "pip-audit レポ�Eトが見つかりました: $audit_vulnerabilities 件の脁E��性"
             fi
 
             echo "Bandit 問題数: $bandit_issues"
-            echo "pip-audit 脆弱性数: $audit_vulnerabilities"
+            echo "pip-audit 脁E��性数: $audit_vulnerabilities"
 
             if [ "$bandit_issues" -gt 0 ] || [ "$audit_vulnerabilities" -gt 0 ]; then
-              echo "⚠️  セキュリティ問題が検出されました"
+              echo "⚠�E�E セキュリチE��問題が検�Eされました"
             else
-              echo "✅ セキュリティ問題は検出されませんでした"
+              echo "✁EセキュリチE��問題�E検�Eされませんでした"
             fi
           fi
 
-      - name: セキュリティレポートのアップロード
+      - name: セキュリチE��レポ�Eト�EアチE�EローチE
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -185,7 +185,7 @@ jobs:
           retention-days: 30
 
   secret-scan:
-    name: 秘密情報スキャン
+    name: 秘寁E��報スキャン
     runs-on: ubuntu-latest
 
     permissions:
@@ -193,19 +193,19 @@ jobs:
       security-events: write
 
     steps:
-      - name: チェックアウト
+      - name: チェチE��アウチE
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0  # 全履歴を取得
+          fetch-depth: 0  # 全履歴を取征E
 
-      - name: TruffleHog による秘密情報スキャン
+      - name: TruffleHog による秘寁E��報スキャン
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
           extra_args: --debug --only-verified
 
   sbom-generation:
-    name: SBOM 生成
+    name: SBOM 生�E
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' &&
@@ -217,39 +217,39 @@ jobs:
       actions: read
 
     steps:
-      - name: チェックアウト
+      - name: チェチE��アウチE
         uses: actions/checkout@v5
 
-      - name: Python セットアップ
+      - name: Python セチE��アチE�E
         uses: actions/setup-python@v6
         with:
           python-version: '3.13'
           allow-prereleases: true
 
-      - name: uv セットアップ
+      - name: uv セチE��アチE�E
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
-      - name: 依存関係インストール
+      - name: 依存関係インスト�Eル
         run: uv sync --python 3.13
 
-      - name: SBOM 生成
+      - name: SBOM 生�E
         run: |
           uv run python scripts/security_scan.py --scan-type=sbom
 
       - name: SBOM 検証
         run: |
           if [ -f security_reports/sbom.json ]; then
-            echo "✅ SBOM が正常に生成されました"
-            echo "コンポーネント数: $(jq '.components | length' security_reports/sbom.json)"
-            echo "生成日時: $(jq -r '.metadata.timestamp' security_reports/sbom.json)"
+            echo "✁ESBOM が正常に生�Eされました"
+            echo "コンポ�Eネント数: $(jq '.components | length' security_reports/sbom.json)"
+            echo "生�E日晁E $(jq -r '.metadata.timestamp' security_reports/sbom.json)"
           else
-            echo "❌ SBOM の生成に失敗しました"
+            echo "❁ESBOM の生�Eに失敗しました"
             exit 1
           fi
 
-      - name: SBOM アップロード
+      - name: SBOM アチE�EローチE
         uses: actions/upload-artifact@v4
         with:
           name: sbom

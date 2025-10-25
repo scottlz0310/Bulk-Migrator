@@ -1,0 +1,61 @@
+{
+  "security_policy": {
+    "version": "1.0",
+    "last_updated": "2025-10-25T10:30:00Z",
+    "
+": {
+      "file_permissions": {
+        ".env": "600",
+        "*.key": "600",
+        "*.pem": "600",
+        "config.json": "644",
+        "logs/*.log": "644"
+      },
+      "sensitive_file_patterns": [
+        ".env",
+        "*.key",
+        "*.pem",
+        "*.p12",
+        "*secret*",
+        "*credential*"
+      ],
+      "log_retention_days": 90,
+      "audit_log_retention_days": 365
+    },
+    "authentication": {
+      "token_expiry_hours": 1,
+      "max_retry_attempts": 3,
+      "lockout_duration_minutes": 15,
+      "require_secure_transport": true
+    },
+    "data_protection": {
+      "mask_pii_in_logs": true,
+      "encrypt_sensitive_cache": true,
+      "secure_temp_files": true,
+      "auto_cleanup_temp_files": true
+    },
+    "monitoring": {
+      "enable_security_audit": true,
+      "enable_integrity_checks": true,
+      "enable_secrets_scanning": true,
+      "alert_on_suspicious_activity": true
+    },
+    "compliance": {
+      "gdpr_compliance": true,
+      "data_residency": "EU",
+      "encryption_at_rest": true,
+      "encryption_in_transit": true
+    }
+  },
+  "security_thresholds": {
+    "max_failed_transfers_per_hour": 100,
+    "max_api_calls_per_minute": 600,
+    "max_concurrent_sessions": 5,
+    "max_file_size_mb": 15360
+  },
+  "incident_response": {
+    "auto_lockdown_on_breach": true,
+    "notification_channels": ["security_audit.log", "email"],
+    "escalation_timeout_minutes": 30
+  }
+}

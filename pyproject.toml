@@ -19,10 +19,12 @@ dependencies = [
     "bandit[toml]>=1.7.5",
     "pip-audit>=2.6.1",
     "cyclonedx-bom>=4.0.0",
+    "cryptography>=41.0.0",
+    "rich>=13.0.0",
 ]
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 target-version = "py313"
 exclude = ["logs/", ".venv/", "build/", ".mypy_cache/", ".pytest_cache/", ".ruff_cache/"]
 

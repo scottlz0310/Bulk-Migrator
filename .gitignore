@@ -59,6 +59,27 @@ bandit-report.json
 sbom.json
 codeql-results/
 
+# 機密情報・認証関連
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+*.keystore
+*.truststore
+*secret*
+*credential*
+*password*
+.bulk_migrator_key
+config_hash.txt
+
+# 一時ファイル・キャッシュ
+*.hash
+*.cache
+.integrity_*
+
 # 品質レポート
 quality_reports/
 coverage.json

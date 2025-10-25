@@ -1,4 +1,4 @@
-name: 品質チェック
+﻿name: Quality Check
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   quality-check:
-    name: 品質チェック (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    name: Quality Check (${{ matrix.os }}, Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     env:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -26,61 +26,61 @@ jobs:
       checks: write
 
     steps:
-      - name: チェックアウト
+      - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Python ${{ matrix.python-version }} セットアップ
+      - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: uv セットアップ
+      - name: Setup uv
         uses: astral-sh/setup-uv@v7
         with:
-          version: "latest"
+          version: latest
           enable-cache: true
           cache-dependency-glob: |
             pyproject.toml
             uv.lock
 
-      - name: 依存関係インストール
+      - name: Install dependencies
         run: uv sync --python ${{ matrix.python-version }}
 
-      - name: リンティング (ruff check)
+      - name: Lint with ruff
         run: uv run ruff check .
         continue-on-error: false
 
-      - name: フォーマットチェック (ruff format)
+      - name: Check formatting with ruff
         run: uv run ruff format --check .
         continue-on-error: false
 
-      - name: 型チェック (mypy)
+      - name: Type check with mypy
         run: uv run mypy .
         continue-on-error: false
 
-      - name: テスト実行とカバレッジ測定（並列実行）
+      - name: Run tests with coverage (parallel)
         run: >
           uv run pytest --cov=src --cov-report=xml --cov-report=term-missing
           --cov-fail-under=60 --junit-xml=pytest-results.xml -n auto
         continue-on-error: false
 
-      - name: 品質ゲート確認
+      - name: Enforce quality gate
         if: always()
         shell: bash
         run: |
-          echo "品質チェック結果の確認"
+          echo "Verifying quality check results"
           if [ "${{ job.status }}" != "success" ]; then
-            echo "❌ 品質チェックが失敗しました。以下を確認してください:"
-            echo "  - ruff check でリンティングエラーがないか"
-            echo "  - ruff format でフォーマットが正しいか"
-            echo "  - mypy で型エラーがないか"
-            echo "  - テストカバレッジが60%以上か"
+            echo "[FAIL] Quality checks failed. Please review:"
+            echo "  - ruff check linting issues"
+            echo "  - ruff format formatting issues"
+            echo "  - mypy type checking errors"
+            echo "  - pytest coverage below threshold"
             exit 1
           else
-            echo "✅ 全ての品質チェックが通過しました"
+            echo "[PASS] All quality checks passed"
           fi
 
-      - name: カバレッジレポートアップロード
+      - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13' && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v4
         with:
@@ -90,12 +90,12 @@ jobs:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: テスト結果レポート
+      - name: Publish test report
         uses: dorny/test-reporter@v2
         if: success() || failure()
         continue-on-error: true
         with:
-          name: テスト結果 (${{ matrix.os }}, Python ${{ matrix.python-version }})
+          name: Test results (${{ matrix.os }}, Python ${{ matrix.python-version }})
           path: pytest-results.xml
           reporter: java-junit
           fail-on-error: false
