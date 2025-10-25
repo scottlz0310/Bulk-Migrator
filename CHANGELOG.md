@@ -1,4 +1,7 @@
-## [2.3.6] - 2025-10-21
+## 2.4.0 - 2025-10-25
+
+## Release 2.4.0\n\n---\n\nFull changelog: https://github.com/scottlz0310/Bulk-Migrator/compare/v2.4.0...v2.4.0
+
 
 
 
