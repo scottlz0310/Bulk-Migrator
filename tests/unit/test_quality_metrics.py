@@ -132,9 +132,7 @@ class TestQualityMetricsCollector:
         assert collector.metrics_dir.name == "quality_reports"
 
     @patch("subprocess.run")
-    def test_collect_coverage_metrics_success(
-        self, mock_run, collector, temp_project_root
-    ):
+    def test_collect_coverage_metrics_success(self, mock_run, collector, temp_project_root):
         """カバレッジメトリクス収集成功テスト"""
         # 検証対象: QualityMetricsCollector.collect_coverage_metrics()
         # 目的: カバレッジが正常に収集されることを確認
@@ -206,9 +204,7 @@ class TestQualityMetricsCollector:
         assert result == 0.0
 
     @patch("subprocess.run")
-    def test_collect_coverage_metrics_json_decode_error(
-        self, mock_run, collector, temp_project_root
-    ):
+    def test_collect_coverage_metrics_json_decode_error(self, mock_run, collector, temp_project_root):
         """カバレッジメトリクス収集JSON解析エラーテスト"""
         # 検証対象: QualityMetricsCollector.collect_coverage_metrics()
         # のJSON解析例外処理
@@ -264,9 +260,7 @@ class TestQualityMetricsCollector:
         # のJSON解析例外処理
         # 目的: JSON解析エラー時に0が返されることを確認
 
-        mock_run.return_value = MagicMock(
-            returncode=1, stdout="invalid json", stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=1, stdout="invalid json", stderr="")
 
         result = collector.collect_lint_metrics()
 
@@ -305,9 +299,7 @@ class TestQualityMetricsCollector:
         # のJSON解析例外処理
         # 目的: JSON解析エラー時に0が返されることを確認
 
-        mock_run.return_value = MagicMock(
-            returncode=1, stdout="invalid json", stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=1, stdout="invalid json", stderr="")
 
         result = collector.collect_security_metrics()
 
@@ -334,9 +326,7 @@ class TestQualityMetricsCollector:
         # のパターン不一致処理
         # 目的: パターンが一致しない場合に(0, 0)が返されることを確認
 
-        mock_run.return_value = MagicMock(
-            returncode=0, stdout="no test results", stderr=""
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="no test results", stderr="")
 
         total, failed = collector.collect_test_metrics()
 
@@ -350,10 +340,7 @@ class TestQualityMetricsCollector:
         # 目的: 型チェックエラー数が正常に収集されることを確認
 
         # mypyの出力をモック
-        mypy_output = (
-            "src/test.py:10: error: Incompatible types\n"
-            "src/test.py:15: error: Missing return"
-        )
+        mypy_output = "src/test.py:10: error: Incompatible types\nsrc/test.py:15: error: Missing return"
         mock_run.return_value = MagicMock(returncode=1, stdout=mypy_output, stderr="")
 
         result = collector.collect_type_check_metrics()
@@ -481,9 +468,7 @@ class TestQualityMetricsCollector:
     @patch.object(QualityMetricsCollector, "collect_type_check_metrics")
     @patch.object(QualityMetricsCollector, "collect_security_metrics")
     @patch.object(QualityMetricsCollector, "collect_test_metrics")
-    def test_collect_all_metrics(
-        self, mock_test, mock_security, mock_type, mock_lint, mock_coverage, collector
-    ):
+    def test_collect_all_metrics(self, mock_test, mock_security, mock_type, mock_lint, mock_coverage, collector):
         """全メトリクス収集テスト"""
         # 検証対象: QualityMetricsCollector.collect_all_metrics()
         # 目的: 全てのメトリクスが正常に収集されることを確認

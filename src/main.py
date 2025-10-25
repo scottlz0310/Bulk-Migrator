@@ -143,15 +143,11 @@ def get_onedrive_files(force_crawl=False):
             with open(cache_file, encoding="utf-8") as f:
                 cached_files = json.load(f)
             structured_logger = get_structured_logger("main")
-            structured_logger.info(
-                "OneDriveファイルリスト（キャッシュ利用）", file_count=len(cached_files)
-            )
+            structured_logger.info("OneDriveファイルリスト（キャッシュ利用）", file_count=len(cached_files))
             return cached_files
         except (OSError, json.JSONDecodeError):
             structured_logger = get_structured_logger("main")
-            structured_logger.warning(
-                "キャッシュファイルが破損しています。再クロールします。"
-            )
+            structured_logger.warning("キャッシュファイルが破損しています。再クロールします。")
 
     CLIENT_ID = os.getenv("CLIENT_ID")
     CLIENT_SECRET = os.getenv("CLIENT_SECRET")
@@ -161,9 +157,7 @@ def get_onedrive_files(force_crawl=False):
     USER_PRINCIPAL_NAME = os.getenv("SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME")
 
     # 環境変数の検証
-    if not all(
-        [CLIENT_ID, CLIENT_SECRET, TENANT_ID, SITE_ID, DRIVE_ID, USER_PRINCIPAL_NAME]
-    ):
+    if not all([CLIENT_ID, CLIENT_SECRET, TENANT_ID, SITE_ID, DRIVE_ID, USER_PRINCIPAL_NAME]):
         structured_logger = get_structured_logger("main")
         structured_logger.error("必要な環境変数が設定されていません")
         return []
@@ -231,9 +225,7 @@ def rebuild_skip_list(onedrive_files=None, force_crawl=False, verbose=False):
                     file_count=len(sharepoint_files),
                 )
             except (OSError, json.JSONDecodeError):
-                structured_logger.warning(
-                    "SharePointキャッシュが破損しています。再クロールします。"
-                )
+                structured_logger.warning("SharePointキャッシュが破損しています。再クロールします。")
                 sharepoint_files = crawl_sharepoint()
         else:
             sharepoint_files = crawl_sharepoint()
@@ -272,9 +264,7 @@ def transfer_file(file_info, client, retry_count, timeout):
         try:
             log_transfer_start(file_info)
             start = time.time()
-            client.upload_file_to_sharepoint(
-                file_info, src_root=src_root, dst_root=dst_root, timeout=timeout
-            )
+            client.upload_file_to_sharepoint(file_info, src_root=src_root, dst_root=dst_root, timeout=timeout)
             elapsed = time.time() - start
             log_transfer_success(file_info, elapsed=elapsed)
             add_to_skip_list(file_info, get_skip_list_path())
@@ -297,9 +287,7 @@ def run_transfer(onedrive_files=None):
     USER_PRINCIPAL_NAME = os.getenv("SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME")
 
     # 環境変数の検証
-    if not all(
-        [CLIENT_ID, CLIENT_SECRET, TENANT_ID, SITE_ID, DRIVE_ID, USER_PRINCIPAL_NAME]
-    ):
+    if not all([CLIENT_ID, CLIENT_SECRET, TENANT_ID, SITE_ID, DRIVE_ID, USER_PRINCIPAL_NAME]):
         structured_logger = get_structured_logger("main")
         structured_logger.error("必要な環境変数が設定されていません")
         required_vars = [
@@ -334,10 +322,7 @@ def run_transfer(onedrive_files=None):
     structured_logger = get_structured_logger("main")
     structured_logger.info("転送対象", target_count=len(targets))
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(transfer_file, f, client, retry_count, timeout): f
-            for f in targets
-        }
+        futures = {executor.submit(transfer_file, f, client, retry_count, timeout): f for f in targets}
         for future in as_completed(futures):
             f = futures[future]
             try:

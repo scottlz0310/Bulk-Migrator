@@ -20,9 +20,7 @@ class TestCrawlSharepoint:
     @patch("src.rebuild_skip_list.GraphTransferClient")
     @patch("src.rebuild_skip_list.get_structured_logger")
     @patch("os.makedirs")
-    def test_crawl_sharepoint_success(
-        self, mock_makedirs, mock_logger, mock_client_class
-    ):
+    def test_crawl_sharepoint_success(self, mock_makedirs, mock_logger, mock_client_class):
         """検証対象: crawl_sharepoint() 目的: SharePointクロール成功時の動作確認"""
         # モックの設定
         mock_logger_instance = Mock()
@@ -72,12 +70,8 @@ class TestCrawlSharepoint:
         assert result[1]["path"] == "TEST-Sharepoint/file2.txt"
 
         # ログ出力の確認
-        mock_logger_instance.info.assert_any_call(
-            "SharePointクロール開始", folder="TEST-Sharepoint"
-        )
-        mock_logger_instance.info.assert_any_call(
-            "SharePointクロール完了", file_count=2
-        )
+        mock_logger_instance.info.assert_any_call("SharePointクロール開始", folder="TEST-Sharepoint")
+        mock_logger_instance.info.assert_any_call("SharePointクロール完了", file_count=2)
 
         # ファイル保存の確認
         mock_file.assert_called()
@@ -98,9 +92,7 @@ class TestCrawlSharepoint:
     @patch("src.rebuild_skip_list.GraphTransferClient")
     @patch("src.rebuild_skip_list.get_structured_logger")
     @patch("os.makedirs")
-    def test_crawl_sharepoint_large_file_list(
-        self, mock_makedirs, mock_logger, mock_client_class
-    ):
+    def test_crawl_sharepoint_large_file_list(self, mock_makedirs, mock_logger, mock_client_class):
         """検証対象: crawl_sharepoint() 目的: 大量ファイル処理時の進捗ログ確認"""
         mock_logger_instance = Mock()
         mock_logger.return_value = mock_logger_instance
@@ -191,9 +183,7 @@ class TestCrawlOnedrive:
         )
 
         # ログ出力の確認
-        mock_logger_instance.info.assert_any_call(
-            "OneDriveクロール開始", folder="TEST-Onedrive"
-        )
+        mock_logger_instance.info.assert_any_call("OneDriveクロール開始", folder="TEST-Onedrive")
         mock_logger_instance.info.assert_any_call("OneDriveクロール完了", file_count=2)
 
         # ファイル保存の確認
@@ -250,9 +240,7 @@ class TestCreateSkipListFromSharepoint:
             },
         ):
             with patch("builtins.open", mock_open()) as mock_file:
-                result = create_skip_list_from_sharepoint(
-                    onedrive_files, sharepoint_files
-                )
+                result = create_skip_list_from_sharepoint(onedrive_files, sharepoint_files)
 
         # 結果の検証
         assert len(result) == 2  # file1.txt と file2.txt がマッチ
@@ -300,9 +288,7 @@ class TestCreateSkipListFromSharepoint:
             },
         ):
             with patch("builtins.open", mock_open()):
-                result = create_skip_list_from_sharepoint(
-                    onedrive_files, sharepoint_files
-                )
+                result = create_skip_list_from_sharepoint(onedrive_files, sharepoint_files)
 
         # 結果の検証
         assert len(result) == 0  # マッチするファイルなし
@@ -350,13 +336,9 @@ class TestCreateSkipListFromSharepoint:
         mock_logger.return_value = mock_logger_instance
 
         # 複雑なパス構造のテストデータ
-        onedrive_files = [
-            {"name": "doc.txt", "path": "MyOneDrive/subfolder/doc.txt", "size": 1024}
-        ]
+        onedrive_files = [{"name": "doc.txt", "path": "MyOneDrive/subfolder/doc.txt", "size": 1024}]
 
-        sharepoint_files = [
-            {"name": "doc.txt", "path": "MySharePoint/subfolder/doc.txt", "size": 1024}
-        ]
+        sharepoint_files = [{"name": "doc.txt", "path": "MySharePoint/subfolder/doc.txt", "size": 1024}]
 
         with patch.dict(
             os.environ,
@@ -366,9 +348,7 @@ class TestCreateSkipListFromSharepoint:
             },
         ):
             with patch("builtins.open", mock_open()):
-                result = create_skip_list_from_sharepoint(
-                    onedrive_files, sharepoint_files
-                )
+                result = create_skip_list_from_sharepoint(onedrive_files, sharepoint_files)
 
         # 結果の検証
         assert len(result) == 1
@@ -382,12 +362,8 @@ class TestCreateSkipListFromSharepoint:
         mock_logger_instance = Mock()
         mock_logger.return_value = mock_logger_instance
 
-        onedrive_files = [
-            {"name": "test.txt", "path": "TEST-Onedrive/test.txt", "size": 1024}
-        ]
-        sharepoint_files = [
-            {"name": "test.txt", "path": "TEST-Sharepoint/test.txt", "size": 1024}
-        ]
+        onedrive_files = [{"name": "test.txt", "path": "TEST-Onedrive/test.txt", "size": 1024}]
+        sharepoint_files = [{"name": "test.txt", "path": "TEST-Sharepoint/test.txt", "size": 1024}]
 
         with patch.dict(
             os.environ,
@@ -397,13 +373,9 @@ class TestCreateSkipListFromSharepoint:
             },
         ):
             # config_manager のインポートエラーをシミュレート
-            with patch(
-                "src.config_manager.get_skip_list_path", side_effect=ImportError()
-            ):
+            with patch("src.config_manager.get_skip_list_path", side_effect=ImportError()):
                 with patch("builtins.open", mock_open()) as mock_file:
-                    result = create_skip_list_from_sharepoint(
-                        onedrive_files, sharepoint_files
-                    )
+                    result = create_skip_list_from_sharepoint(onedrive_files, sharepoint_files)
 
         # 結果の検証
         assert len(result) == 1
@@ -418,14 +390,10 @@ class TestMainExecution:
     @patch("src.rebuild_skip_list.create_skip_list_from_sharepoint")
     @patch("src.rebuild_skip_list.crawl_onedrive")
     @patch("src.rebuild_skip_list.crawl_sharepoint")
-    def test_main_execution_flow(
-        self, mock_crawl_sharepoint, mock_crawl_onedrive, mock_create_skip_list
-    ):
+    def test_main_execution_flow(self, mock_crawl_sharepoint, mock_crawl_onedrive, mock_create_skip_list):
         """検証対象: メイン実行フロー 目的: 全体の実行順序確認"""
         # モックの設定
-        sharepoint_files = [
-            {"name": "sp_file.txt", "path": "TEST-Sharepoint/sp_file.txt"}
-        ]
+        sharepoint_files = [{"name": "sp_file.txt", "path": "TEST-Sharepoint/sp_file.txt"}]
         onedrive_files = [{"name": "od_file.txt", "path": "TEST-Onedrive/od_file.txt"}]
         skip_list = [{"name": "matched.txt", "path": "TEST-Onedrive/matched.txt"}]
 
@@ -443,9 +411,7 @@ class TestMainExecution:
         # 実行順序の確認
         mock_crawl_sharepoint.assert_called_once()
         mock_crawl_onedrive.assert_called_once()
-        mock_create_skip_list.assert_called_once_with(
-            result_onedrive, result_sharepoint
-        )
+        mock_create_skip_list.assert_called_once_with(result_onedrive, result_sharepoint)
 
         # 結果の確認
         assert result_sharepoint == sharepoint_files

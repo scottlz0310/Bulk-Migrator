@@ -27,9 +27,7 @@ class GitHubCLIChecker:
     def check_gh_cli(self):
         """GitHub CLI の存在確認"""
         try:
-            result = subprocess.run(
-                ["gh", "--version"], capture_output=True, text=True, check=True
-            )
+            result = subprocess.run(["gh", "--version"], capture_output=True, text=True, check=True)
             version = result.stdout.strip().split()[2]
             logger.info(f"✅ GitHub CLI が利用可能です: {version}")
         except (subprocess.CalledProcessError, FileNotFoundError):
@@ -40,9 +38,7 @@ class GitHubCLIChecker:
     def run_gh_command(self, args: list[str]) -> dict[str, Any] | None:
         """GitHub CLI コマンドを実行"""
         try:
-            result = subprocess.run(
-                ["gh"] + args, capture_output=True, text=True, check=True
-            )
+            result = subprocess.run(["gh"] + args, capture_output=True, text=True, check=True)
 
             if result.stdout.strip():
                 try:
@@ -219,10 +215,7 @@ class GitHubCLIChecker:
         for workflow_name, run in summary["workflows"].items():
             if "security" in workflow_name.lower() or "scan" in workflow_name.lower():
                 security_workflows[workflow_name] = run
-            elif any(
-                keyword in workflow_name.lower()
-                for keyword in ["quality", "test", "lint", "check"]
-            ):
+            elif any(keyword in workflow_name.lower() for keyword in ["quality", "test", "lint", "check"]):
                 quality_workflows[workflow_name] = run
             else:
                 other_workflows[workflow_name] = run
@@ -233,9 +226,7 @@ class GitHubCLIChecker:
             "security_workflows": security_workflows,
             "quality_workflows": quality_workflows,
             "other_workflows": other_workflows,
-            "recommendations": self._generate_recommendations(
-                security_workflows, quality_workflows
-            ),
+            "recommendations": self._generate_recommendations(security_workflows, quality_workflows),
         }
 
     def _generate_recommendations(
@@ -245,9 +236,7 @@ class GitHubCLIChecker:
         recommendations = []
 
         # セキュリティワークフローの確認
-        security_failed = any(
-            run.get("conclusion") == "failure" for run in security_workflows.values()
-        )
+        security_failed = any(run.get("conclusion") == "failure" for run in security_workflows.values())
         if security_failed:
             msg = "❌ セキュリティスキャンで問題が検出されています。修正が必要です。"
             recommendations.append(msg)
@@ -258,9 +247,7 @@ class GitHubCLIChecker:
             recommendations.append(msg)
 
         # 品質チェックワークフローの確認
-        quality_failed = any(
-            run.get("conclusion") == "failure" for run in quality_workflows.values()
-        )
+        quality_failed = any(run.get("conclusion") == "failure" for run in quality_workflows.values())
         if quality_failed:
             msg = "❌ 品質チェックで問題が検出されています。修正が必要です。"
             recommendations.append(msg)
@@ -362,9 +349,7 @@ def _handle_all_check(checker: GitHubCLIChecker) -> dict[str, Any]:
 
 def main() -> None:
     """メイン関数"""
-    parser = argparse.ArgumentParser(
-        description="GitHub Actions 実行状況を確認 (GitHub CLI使用)"
-    )
+    parser = argparse.ArgumentParser(description="GitHub Actions 実行状況を確認 (GitHub CLI使用)")
     parser.add_argument(
         "--type",
         choices=["all", "security", "quality"],

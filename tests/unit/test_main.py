@@ -51,14 +51,10 @@ class TestRetryWithBackoff:
 
     def test_max_retries_exceeded(self):
         """検証対象: retry_with_backoff() 目的: 最大リトライ回数超過時の例外発生確認"""
-        mock_func = Mock(
-            side_effect=requests.exceptions.ConnectionError("persistent error")
-        )
+        mock_func = Mock(side_effect=requests.exceptions.ConnectionError("persistent error"))
 
         with patch("time.sleep"):
-            with pytest.raises(
-                requests.exceptions.ConnectionError, match="persistent error"
-            ):
+            with pytest.raises(requests.exceptions.ConnectionError, match="persistent error"):
                 retry_with_backoff(mock_func, max_retries=2, wait_sec=1)
 
         assert mock_func.call_count == 2
@@ -206,9 +202,7 @@ class TestGetOneDriveFiles:
     @patch("src.main.GraphTransferClient")
     @patch("os.path.exists")
     @patch("os.makedirs")
-    def test_get_onedrive_files_force_crawl(
-        self, mock_makedirs, mock_exists, mock_client
-    ):
+    def test_get_onedrive_files_force_crawl(self, mock_makedirs, mock_exists, mock_client):
         """検証対象: get_onedrive_files() 目的: 強制クロール時の新規取得確認"""
         mock_exists.return_value = True
         mock_files = [{"name": "new.txt", "path": "/new.txt"}]
@@ -339,9 +333,7 @@ class TestTransferFile:
     @patch("src.main.log_transfer_error")
     @patch("src.main.log_transfer_start")
     @patch("time.sleep")
-    def test_transfer_file_failure_with_retries(
-        self, mock_sleep, mock_log_start, mock_log_error
-    ):
+    def test_transfer_file_failure_with_retries(self, mock_sleep, mock_log_start, mock_log_error):
         """検証対象: transfer_file() 目的: 転送失敗時のリトライ動作確認"""
         file_info = {"name": "test.txt", "path": "/test.txt"}
         mock_client = Mock()
@@ -452,9 +444,7 @@ class TestMain:
     @patch("src.main.get_onedrive_files")
     @patch("src.main.clear_logs_and_update_config")
     @patch("sys.argv", ["main.py", "--full-rebuild"])
-    def test_main_full_rebuild_option(
-        self, mock_clear_logs, mock_get_onedrive, mock_rebuild, mock_run_transfer
-    ):
+    def test_main_full_rebuild_option(self, mock_clear_logs, mock_get_onedrive, mock_rebuild, mock_run_transfer):
         """検証対象: main() 目的: --full-rebuildオプション時の動作確認"""
         mock_get_onedrive.return_value = [{"name": "test.txt"}]
         mock_rebuild.return_value = 5

@@ -20,9 +20,7 @@ class FileLock:
                 if e.errno != errno.EEXIST:
                     raise
                 if time.time() - start > self.timeout:
-                    raise TimeoutError(
-                        f"Timeout waiting for lock: {self.lockfile}"
-                    ) from e
+                    raise TimeoutError(f"Timeout waiting for lock: {self.lockfile}") from e
                 time.sleep(0.1)
 
     def release(self):

@@ -25,9 +25,7 @@ class TestSkipList:
     def test_load_skip_list_existing_file(self):
         """既存のスキップリストファイル読み込みテスト"""
         with patch("os.path.exists", return_value=True):
-            with patch(
-                "builtins.open", mock_open(read_data=json.dumps(self.test_skip_list))
-            ):
+            with patch("builtins.open", mock_open(read_data=json.dumps(self.test_skip_list))):
                 result = load_skip_list("test_path.json")
                 assert result == self.test_skip_list
 
@@ -70,9 +68,7 @@ class TestSkipList:
         mock_filelock.return_value.__enter__.return_value = mock_lock
 
         file_info = {"path": "/test/file1.txt", "name": "file1.txt"}
-        existing_list = [
-            {"path": "/test/file1.txt", "name": "file1.txt", "reason": "existing"}
-        ]
+        existing_list = [{"path": "/test/file1.txt", "name": "file1.txt", "reason": "existing"}]
 
         with patch("src.skiplist.load_skip_list", return_value=existing_list):
             with patch("src.skiplist.save_skip_list") as mock_save:

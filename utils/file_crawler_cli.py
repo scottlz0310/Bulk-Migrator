@@ -52,9 +52,7 @@ from file_crawler import (  # noqa: E402
 def cmd_onedrive(args):
     """OneDriveクロール実行"""
     try:
-        file_targets = crawl_onedrive_files(
-            root_folder=args.root, user_principal_name=args.user
-        )
+        file_targets = crawl_onedrive_files(root_folder=args.root, user_principal_name=args.user)
 
         if args.save:
             save_file_list(file_targets, args.save)
@@ -88,9 +86,7 @@ def cmd_skiplist(args):
             build_skiplist_from_filelist(file_targets, args.save)
         else:
             # SharePointクロール→スキップリスト生成
-            build_skiplist_from_sharepoint(
-                root_folder=args.root, skip_list_path=args.save
-            )
+            build_skiplist_from_sharepoint(root_folder=args.root, skip_list_path=args.save)
 
     except Exception:
         pass
@@ -165,58 +161,38 @@ def main():
 
     # OneDriveクロールコマンド
     parser_onedrive = subparsers.add_parser("onedrive", help="OneDriveをクロール")
-    parser_onedrive.add_argument(
-        "--root", default="TEST-Onedrive", help="OneDriveルートフォルダ名"
-    )
-    parser_onedrive.add_argument(
-        "--user", help="OneDriveユーザープリンシパル名（省略時は環境変数から取得）"
-    )
+    parser_onedrive.add_argument("--root", default="TEST-Onedrive", help="OneDriveルートフォルダ名")
+    parser_onedrive.add_argument("--user", help="OneDriveユーザープリンシパル名（省略時は環境変数から取得）")
     parser_onedrive.add_argument("--save", help="ファイルリスト保存先パス")
     parser_onedrive.set_defaults(func=cmd_onedrive)
 
     # SharePointクロールコマンド
     parser_sharepoint = subparsers.add_parser("sharepoint", help="SharePointをクロール")
-    parser_sharepoint.add_argument(
-        "--root", default="TEST-Sharepoint", help="SharePointルートフォルダ名"
-    )
+    parser_sharepoint.add_argument("--root", default="TEST-Sharepoint", help="SharePointルートフォルダ名")
     parser_sharepoint.add_argument("--save", help="ファイルリスト保存先パス")
     parser_sharepoint.set_defaults(func=cmd_sharepoint)
 
     # 探索コマンド【新規追加】
-    parser_explore = subparsers.add_parser(
-        "explore", help="SharePointドライブの構造を探索"
-    )
+    parser_explore = subparsers.add_parser("explore", help="SharePointドライブの構造を探索")
     parser_explore.add_argument("--path", help="探索するパス（省略時はルート）")
     parser_explore.set_defaults(func=cmd_explore)
 
     # スキップリスト生成コマンド
     parser_skiplist = subparsers.add_parser("skiplist", help="スキップリストを生成")
-    parser_skiplist.add_argument(
-        "--root", help="SharePointルートフォルダ名（--from-file指定時は無視）"
-    )
-    parser_skiplist.add_argument(
-        "--save", default="logs/skip_list.json", help="スキップリスト保存先パス"
-    )
-    parser_skiplist.add_argument(
-        "--from-file", help="既存のファイルリストJSONからスキップリスト生成"
-    )
+    parser_skiplist.add_argument("--root", help="SharePointルートフォルダ名（--from-file指定時は無視）")
+    parser_skiplist.add_argument("--save", default="logs/skip_list.json", help="スキップリスト保存先パス")
+    parser_skiplist.add_argument("--from-file", help="既存のファイルリストJSONからスキップリスト生成")
     parser_skiplist.set_defaults(func=cmd_skiplist)
 
     # ファイル数比較コマンド
     parser_compare = subparsers.add_parser("compare", help="ファイル数を比較")
-    parser_compare.add_argument(
-        "--onedrive", required=True, help="OneDriveファイルリストJSONパス"
-    )
-    parser_compare.add_argument(
-        "--sharepoint", required=True, help="SharePointファイルリストJSONパス"
-    )
+    parser_compare.add_argument("--onedrive", required=True, help="OneDriveファイルリストJSONパス")
+    parser_compare.add_argument("--sharepoint", required=True, help="SharePointファイルリストJSONパス")
     parser_compare.add_argument("--expected", type=int, help="期待されるファイル数")
     parser_compare.set_defaults(func=cmd_compare)
 
     # 対話型コマンド
-    parser_interactive = subparsers.add_parser(
-        "interactive", help="対話型スキップリスト再構築"
-    )
+    parser_interactive = subparsers.add_parser("interactive", help="対話型スキップリスト再構築")
     parser_interactive.set_defaults(func=cmd_interactive)
 
     args = parser.parse_args()

@@ -26,9 +26,7 @@ except ImportError:
         return 4
 
 
-def _build_onedrive_download_url(
-    base_url: str, encoded_path: str, onedrive_drive_id: str | None = None
-) -> str:
+def _build_onedrive_download_url(base_url: str, encoded_path: str, onedrive_drive_id: str | None = None) -> str:
     """OneDriveダウンロードURL構築のヘルパー関数"""
     if onedrive_drive_id and onedrive_drive_id.strip():
         return f"{base_url}/drives/{onedrive_drive_id}/root:/{encoded_path}:/content"
@@ -64,18 +62,14 @@ class GraphTransferClient:
                 file_size=file_size,
                 upload_method="session",
             )
-            return self._upload_large_file_to_sharepoint(
-                file_info, src_root, dst_root, timeout
-            )
+            return self._upload_large_file_to_sharepoint(file_info, src_root, dst_root, timeout)
         else:
             logger.info(
                 f"小容量ファイル({file_size} bytes) - 単純PUT使用",
                 file_size=file_size,
                 upload_method="simple_put",
             )
-            return self._upload_small_file_to_sharepoint(
-                file_info, src_root, dst_root, timeout
-            )
+            return self._upload_small_file_to_sharepoint(file_info, src_root, dst_root, timeout)
 
     def _upload_small_file_to_sharepoint(
         self,
@@ -107,36 +101,23 @@ class GraphTransferClient:
                     resp = requests.get(download_url, stream=True, timeout=timeout)
                     resp.raise_for_status()
                 else:
-                    raise Exception(
-                        f"ダウンロードURLが取得できませんでした: {file_info['name']}"
-                    )
+                    raise Exception(f"ダウンロードURLが取得できませんでした: {file_info['name']}")
             else:
-                raise Exception(
-                    f"ファイル情報の取得に失敗しました: "
-                    f"{file_resp.status_code} - {file_resp.text}"
-                )
+                raise Exception(f"ファイル情報の取得に失敗しました: {file_resp.status_code} - {file_resp.text}")
         else:
             # フォールバック: 従来のパスベース方式
             import urllib.parse
 
-            encoded_path = "/".join(
-                [urllib.parse.quote(part) for part in src_path.split("/")]
-            )
+            encoded_path = "/".join([urllib.parse.quote(part) for part in src_path.split("/")])
 
             if onedrive_drive_id:
-                download_url = _build_onedrive_download_url(
-                    self.base_url, encoded_path, onedrive_drive_id
-                )
+                download_url = _build_onedrive_download_url(self.base_url, encoded_path, onedrive_drive_id)
             else:
-                download_url = _build_onedrive_download_url(
-                    self.base_url, encoded_path, onedrive_drive_id
-                )
+                download_url = _build_onedrive_download_url(self.base_url, encoded_path, onedrive_drive_id)
 
             logger = get_structured_logger("transfer")
             logger.debug("OneDrive download_url", download_url=download_url)
-            resp = requests.get(
-                download_url, headers=self._headers(), stream=True, timeout=timeout
-            )
+            resp = requests.get(download_url, headers=self._headers(), stream=True, timeout=timeout)
             resp.raise_for_status()
 
         # SharePoint側のアップロード先パスを生成
@@ -148,15 +129,10 @@ class GraphTransferClient:
         if dst_dir and dst_dir != dst_root:
             self.ensure_sharepoint_folder(dst_dir)
 
-        upload_url = (
-            f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}"
-            f"/root:/{dst_path}:/content"
-        )
+        upload_url = f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}/root:/{dst_path}:/content"
 
         # PUTでストリーミングアップロード
-        put_resp = requests.put(
-            upload_url, headers=self._headers(), data=resp.raw, timeout=timeout
-        )
+        put_resp = requests.put(upload_url, headers=self._headers(), data=resp.raw, timeout=timeout)
         put_resp.raise_for_status()
         return put_resp.json()
 
@@ -177,9 +153,7 @@ class GraphTransferClient:
         skip_list = load_skip_list(skip_list_path)
         return [f for f in file_targets if not is_skipped(f, skip_list)]
 
-    def save_file_targets(
-        self, file_targets: list[dict[str, Any]], save_path: str
-    ) -> None:
+    def save_file_targets(self, file_targets: list[dict[str, Any]], save_path: str) -> None:
         """
         転送対象ファイルリストをJSONで保存
         """
@@ -228,9 +202,7 @@ class GraphTransferClient:
                     # 1000件ごとに進捗ログを出力
                     if len(file_targets) % 1000 == 0:
                         progress_logger = get_structured_logger("transfer")
-                        progress_logger.info(
-                            f"OneDriveクロール進捗: {len(file_targets)}ファイル処理済み"
-                        )
+                        progress_logger.info(f"OneDriveクロール進捗: {len(file_targets)}ファイル処理済み")
 
         logger.info("OneDriveクロール完了", file_count=len(file_targets))
         return file_targets
@@ -289,11 +261,7 @@ class GraphTransferClient:
         for item in data.get("value", []):
             if item.get("folder"):
                 # フォルダは再帰のみ、itemsには追加しない（二重再帰バグ修正）
-                sub_path = (
-                    os.path.join(folder_path, item["name"])
-                    if folder_path
-                    else item["name"]
-                )
+                sub_path = os.path.join(folder_path, item["name"]) if folder_path else item["name"]
                 items.extend(self.list_drive_items(sub_path))
             else:
                 # ファイルのみitemsに追加
@@ -318,9 +286,7 @@ class GraphTransferClient:
         elif drive_id:
             url = f"{self.base_url}/drives/{drive_id}/root"
         else:
-            raise ValueError(
-                "user_principal_name か drive_id のいずれかを指定してください"
-            )
+            raise ValueError("user_principal_name か drive_id のいずれかを指定してください")
         if folder_path:
             url += f":/{folder_path}:"
         url += "/children"
@@ -349,11 +315,7 @@ class GraphTransferClient:
         data = resp.json()
         for item in data.get("value", []):
             # フルパスを構築
-            current_path = (
-                os.path.join(_parent_path, item["name"])
-                if _parent_path
-                else item["name"]
-            )
+            current_path = os.path.join(_parent_path, item["name"]) if _parent_path else item["name"]
             current_path = current_path.replace("\\", "/")
 
             # アイテムにパス情報を追加
@@ -362,11 +324,7 @@ class GraphTransferClient:
 
             if item.get("folder"):
                 # フォルダの場合は再帰的に取得
-                sub_folder_path = (
-                    os.path.join(folder_path, item["name"])
-                    if folder_path
-                    else item["name"]
-                )
+                sub_folder_path = os.path.join(folder_path, item["name"]) if folder_path else item["name"]
                 sub_folder_path = sub_folder_path.replace("\\", "/")
                 items.extend(
                     self.list_onedrive_items_with_path(
@@ -398,9 +356,7 @@ class GraphTransferClient:
         if resp.status_code == 409:
             # 既に存在する場合は何もしない（正常終了扱い）
             logger = get_structured_logger("transfer")
-            logger.info(
-                "フォルダ既存", folder_path=os.path.join(parent_path, folder_name)
-            )
+            logger.info("フォルダ既存", folder_path=os.path.join(parent_path, folder_name))
             return {}
         resp.raise_for_status()
         return resp.json()
@@ -423,17 +379,10 @@ class GraphTransferClient:
 
         for part in path_parts:
             parent_path = current_path
-            current_path = (
-                os.path.join(current_path, part).replace("\\", "/")
-                if current_path
-                else part
-            )
+            current_path = os.path.join(current_path, part).replace("\\", "/") if current_path else part
 
             # フォルダの存在確認
-            check_url = (
-                f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}"
-                f"/root:/{current_path}"
-            )
+            check_url = f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}/root:/{current_path}"
             try:
                 resp = requests.get(check_url, headers=self._headers(), timeout=10)
                 if resp.status_code == 404:
@@ -443,9 +392,7 @@ class GraphTransferClient:
                     self.create_folder(parent_path, part)
             except Exception as e:
                 logger = get_structured_logger("transfer")
-                logger.warning(
-                    "フォルダ確認/作成エラー", folder_path=current_path, error=str(e)
-                )
+                logger.warning("フォルダ確認/作成エラー", folder_path=current_path, error=str(e))
                 # エラーが発生しても処理を続行
 
     def _upload_large_file_to_sharepoint(
@@ -499,9 +446,7 @@ class GraphTransferClient:
             )
 
             # チャンクをアップロード
-            self._upload_chunk(
-                upload_url, chunk_data, start_byte, end_byte, file_size, timeout
-            )
+            self._upload_chunk(upload_url, chunk_data, start_byte, end_byte, file_size, timeout)
 
         logger = get_structured_logger("transfer")
         logger.info("アップロード完了", dst_path=dst_path)
@@ -512,8 +457,7 @@ class GraphTransferClient:
         SharePointアップロードセッションを作成
         """
         session_url = (
-            f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}"
-            f"/root:/{dst_path}:/createUploadSession"
+            f"{self.base_url}/sites/{self.site_id}/drives/{self.drive_id}/root:/{dst_path}:/createUploadSession"
         )
 
         payload = {
@@ -523,9 +467,7 @@ class GraphTransferClient:
             }
         }
 
-        response = requests.post(
-            session_url, headers=self._headers(), json=payload, timeout=10
-        )
+        response = requests.post(session_url, headers=self._headers(), json=payload, timeout=10)
         response.raise_for_status()
         return response.json()
 
@@ -551,35 +493,22 @@ class GraphTransferClient:
                     resp.raise_for_status()
                     return resp.raw
                 else:
-                    raise Exception(
-                        f"ダウンロードURLが取得できませんでした: {file_info['name']}"
-                    )
+                    raise Exception(f"ダウンロードURLが取得できませんでした: {file_info['name']}")
             else:
-                raise Exception(
-                    f"ファイル情報の取得に失敗しました: "
-                    f"{file_resp.status_code} - {file_resp.text}"
-                )
+                raise Exception(f"ファイル情報の取得に失敗しました: {file_resp.status_code} - {file_resp.text}")
         else:
             # フォールバック: 従来のパスベース方式
             src_path = file_info["path"]
             import urllib.parse
 
-            encoded_path = "/".join(
-                [urllib.parse.quote(part) for part in src_path.split("/")]
-            )
+            encoded_path = "/".join([urllib.parse.quote(part) for part in src_path.split("/")])
 
             if onedrive_drive_id:
-                download_url = _build_onedrive_download_url(
-                    self.base_url, encoded_path, onedrive_drive_id
-                )
+                download_url = _build_onedrive_download_url(self.base_url, encoded_path, onedrive_drive_id)
             else:
-                download_url = _build_onedrive_download_url(
-                    self.base_url, encoded_path, onedrive_drive_id
-                )
+                download_url = _build_onedrive_download_url(self.base_url, encoded_path, onedrive_drive_id)
 
-            resp = requests.get(
-                download_url, headers=self._headers(), stream=True, timeout=timeout
-            )
+            resp = requests.get(download_url, headers=self._headers(), stream=True, timeout=timeout)
             resp.raise_for_status()
             return resp.raw
 
@@ -600,8 +529,6 @@ class GraphTransferClient:
             "Content-Length": str(len(chunk_data)),
         }
 
-        response = requests.put(
-            upload_url, headers=headers, data=chunk_data, timeout=timeout
-        )
+        response = requests.put(upload_url, headers=headers, data=chunk_data, timeout=timeout)
         response.raise_for_status()
         return response

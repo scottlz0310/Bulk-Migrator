@@ -44,9 +44,7 @@ class TestStructuredLogger:
             mock_datetime.now.return_value = fixed_utc_time
 
             with patch.object(structured_logger.logger, "info") as mock_info:
-                structured_logger.log_structured(
-                    "INFO", "test_event", "Test message", test_field="test_value"
-                )
+                structured_logger.log_structured("INFO", "test_event", "Test message", test_field="test_value")
 
                 # ログが呼ばれたことを確認
                 mock_info.assert_called_once()
@@ -114,9 +112,7 @@ class TestStructuredLogger:
             mock_datetime.now.return_value = fixed_utc_time
 
             with patch.object(structured_logger.logger, "info") as mock_info:
-                structured_logger.log_transfer_event(
-                    "upload_start", file_info, trace_id="test-trace-123"
-                )
+                structured_logger.log_transfer_event("upload_start", file_info, trace_id="test-trace-123")
 
                 # ログが呼ばれたことを確認
                 mock_info.assert_called_once()

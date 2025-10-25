@@ -40,9 +40,7 @@ class TestQualityThresholds:
         # 検証対象: QualityThresholds のカスタム設定
         # 目的: カスタム閾値が正しく設定されることを確認
 
-        thresholds = QualityThresholds(
-            coverage_minimum=80.0, max_lint_errors=5, max_type_errors=3
-        )
+        thresholds = QualityThresholds(coverage_minimum=80.0, max_lint_errors=5, max_type_errors=3)
 
         assert thresholds.coverage_minimum == 80.0
         assert thresholds.max_lint_errors == 5
@@ -286,9 +284,7 @@ class TestQualityAlertSystem:
             "security_issues": 0,
         }
 
-        with open(
-            quality_reports_dir / "quality_metrics_20240115_120000.json", "w"
-        ) as f:
+        with open(quality_reports_dir / "quality_metrics_20240115_120000.json", "w") as f:
             json.dump(test_metrics, f)
 
         # 2024年1月のレポートを生成
@@ -718,9 +714,7 @@ class TestQualityAlertSystem:
             "security_issues": 1,
         }
 
-        with open(
-            quality_reports_dir / "quality_metrics_20240215_120000.json", "w"
-        ) as f:
+        with open(quality_reports_dir / "quality_metrics_20240215_120000.json", "w") as f:
             json.dump(test_metrics, f)
 
         # 2024年Q1のレポートを生成
@@ -748,9 +742,7 @@ class TestQualityAlertSystem:
             "security_issues": 2,
         }
 
-        with open(
-            quality_reports_dir / "quality_metrics_20240415_120000.json", "w"
-        ) as f:
+        with open(quality_reports_dir / "quality_metrics_20240415_120000.json", "w") as f:
             json.dump(test_metrics, f)
 
         # 2024年上半期のレポートを生成

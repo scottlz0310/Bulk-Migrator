@@ -41,9 +41,7 @@ class TestFileLock:
         lock.acquire()
 
         assert lock.fd == 42
-        mock_open.assert_called_once_with(
-            "test.lock", os.O_CREAT | os.O_EXCL | os.O_RDWR
-        )
+        mock_open.assert_called_once_with("test.lock", os.O_CREAT | os.O_EXCL | os.O_RDWR)
         mock_write.assert_called_once_with(42, b"12345")
 
     @patch("os.open")
@@ -67,9 +65,7 @@ class TestFileLock:
     @patch("time.sleep")
     @patch("os.write")
     @patch("os.getpid")
-    def test_acquire_retry_then_success(
-        self, mock_getpid, mock_write, mock_sleep, mock_time, mock_open
-    ):
+    def test_acquire_retry_then_success(self, mock_getpid, mock_write, mock_sleep, mock_time, mock_open):
         """検証対象: FileLock.acquire() 目的: リトライ後成功時の動作確認"""
         mock_getpid.return_value = 12345
         mock_time.side_effect = [100.0, 105.0, 107.0]  # start, first check, success
@@ -128,9 +124,7 @@ class TestFileLock:
     @patch("os.getpid")
     @patch("os.close")
     @patch("os.unlink")
-    def test_context_manager_success(
-        self, mock_unlink, mock_close, mock_getpid, mock_write, mock_open
-    ):
+    def test_context_manager_success(self, mock_unlink, mock_close, mock_getpid, mock_write, mock_open):
         """検証対象: FileLock context manager 目的: with文での正常動作確認"""
         mock_getpid.return_value = 12345
         mock_open.return_value = 42
@@ -150,9 +144,7 @@ class TestFileLock:
     @patch("os.getpid")
     @patch("os.close")
     @patch("os.unlink")
-    def test_context_manager_with_exception(
-        self, mock_unlink, mock_close, mock_getpid, mock_write, mock_open
-    ):
+    def test_context_manager_with_exception(self, mock_unlink, mock_close, mock_getpid, mock_write, mock_open):
         """検証対象: FileLock context manager 目的: 例外発生時の適切な解放確認"""
         mock_open.return_value = 42
         mock_getpid.return_value = 12345

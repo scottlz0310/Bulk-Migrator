@@ -51,9 +51,7 @@ def crawl_sharepoint():
             if relative_path.startswith("/"):
                 relative_path = relative_path[1:]
             full_path = (
-                os.path.join(sharepoint_folder, relative_path, item["name"]).replace(
-                    "\\", "/"
-                )
+                os.path.join(sharepoint_folder, relative_path, item["name"]).replace("\\", "/")
                 if relative_path
                 else f"{sharepoint_folder}/{item['name']}"
             )
@@ -74,9 +72,7 @@ def crawl_sharepoint():
         if len(sharepoint_file_list) % 1000 == 0:
             from src.logger import logger
 
-            logger.info(
-                f"SharePointクロール進捗: {len(sharepoint_file_list)}ファイル処理済み"
-            )
+            logger.info(f"SharePointクロール進捗: {len(sharepoint_file_list)}ファイル処理済み")
 
     # SharePointファイルリストを保存
     os.makedirs("logs", exist_ok=True)
@@ -90,9 +86,7 @@ def crawl_sharepoint():
     with open(sharepoint_files_path, "w", encoding="utf-8") as f:
         json.dump(sharepoint_file_list, f, ensure_ascii=False, indent=2)
 
-    structured_logger.info(
-        "SharePointクロール完了", file_count=len(sharepoint_file_list)
-    )
+    structured_logger.info("SharePointクロール完了", file_count=len(sharepoint_file_list))
     return sharepoint_file_list
 
 

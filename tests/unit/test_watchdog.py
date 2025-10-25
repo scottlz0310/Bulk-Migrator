@@ -33,15 +33,11 @@ class TestLogWatchdog:
 
         with patch("builtins.open", mock_open()) as mock_file:
             with patch("src.watchdog.datetime") as mock_datetime:
-                mock_datetime.now.return_value.strftime.return_value = (
-                    "2024-01-01 12:00:00"
-                )
+                mock_datetime.now.return_value.strftime.return_value = "2024-01-01 12:00:00"
                 log_watchdog("test message")
 
         mock_get_logger.assert_called_once_with("watchdog")
-        mock_logger.info.assert_called_once_with(
-            "test message", timestamp="2024-01-01 12:00:00"
-        )
+        mock_logger.info.assert_called_once_with("test message", timestamp="2024-01-01 12:00:00")
         mock_makedirs.assert_called_once_with("logs", exist_ok=True)
         mock_file.assert_called_once_with("logs/watchdog.log", "a", encoding="utf-8")
 
@@ -137,9 +133,7 @@ class TestIsTransferRemaining:
             result = is_transfer_remaining()
 
         assert result is True
-        mock_log.assert_called_with(
-            "転送残判定: OneDrive=3件, スキップリスト=1件, 残り=2件"
-        )
+        mock_log.assert_called_with("転送残判定: OneDrive=3件, スキップリスト=1件, 残り=2件")
 
     @patch("src.watchdog.log_watchdog")
     def test_is_transfer_remaining_false(self, mock_log):
@@ -156,9 +150,7 @@ class TestIsTransferRemaining:
             result = is_transfer_remaining()
 
         assert result is False
-        mock_log.assert_called_with(
-            "転送残判定: OneDrive=1件, スキップリスト=1件, 残り=0件"
-        )
+        mock_log.assert_called_with("転送残判定: OneDrive=1件, スキップリスト=1件, 残り=0件")
 
     @patch("src.watchdog.log_watchdog")
     def test_is_transfer_remaining_error(self, mock_log):
@@ -177,9 +169,7 @@ class TestHandleProcessTermination:
     @patch("src.watchdog.is_transfer_remaining")
     @patch("src.watchdog.log_watchdog")
     @patch("time.time")
-    def test_handle_process_termination_success_with_remaining(
-        self, mock_time, mock_log, mock_remaining
-    ):
+    def test_handle_process_termination_success_with_remaining(self, mock_time, mock_log, mock_remaining):
         """検証対象: _handle_process_termination()
         目的: 正常終了・転送残あり時のrestart返却確認"""
         mock_time.return_value = 1000.0
@@ -191,17 +181,13 @@ class TestHandleProcessTermination:
         result = _handle_process_termination(mock_proc, start_time=900.0)
 
         assert result == "restart"
-        mock_log.assert_any_call(
-            "src.mainが自然終了しました (稼働時間: 1分40秒, 終了コード: 0)"
-        )
+        mock_log.assert_any_call("src.mainが自然終了しました (稼働時間: 1分40秒, 終了コード: 0)")
         mock_log.assert_any_call("転送対象が残っているため、src.mainを再起動します")
 
     @patch("src.watchdog.is_transfer_remaining")
     @patch("src.watchdog.log_watchdog")
     @patch("time.time")
-    def test_handle_process_termination_success_complete(
-        self, mock_time, mock_log, mock_remaining
-    ):
+    def test_handle_process_termination_success_complete(self, mock_time, mock_log, mock_remaining):
         """検証対象: _handle_process_termination()
         目的: 正常終了・転送完了時のcomplete返却確認"""
         mock_time.return_value = 1000.0
@@ -228,9 +214,7 @@ class TestHandleProcessTermination:
         result = _handle_process_termination(mock_proc, start_time=900.0)
 
         assert result == "restart"
-        mock_log.assert_called_with(
-            "src.mainが自然終了しました (稼働時間: 1分40秒, 終了コード: 1)"
-        )
+        mock_log.assert_called_with("src.mainが自然終了しました (稼働時間: 1分40秒, 終了コード: 1)")
 
 
 class TestHandleFreezeDetection:
@@ -250,9 +234,7 @@ class TestHandleFreezeDetection:
 
         _handle_freeze_detection(mock_proc, start_time=1500.0, idle_time=300.0)
 
-        mock_log.assert_any_call(
-            "!!! フリーズ検出 !!! (稼働時間: 8分20秒, 無応答時間: 5分0秒)"
-        )
+        mock_log.assert_any_call("!!! フリーズ検出 !!! (稼働時間: 8分20秒, 無応答時間: 5分0秒)")
         mock_log.assert_any_call("=== 直前のログ ===")
         mock_log.assert_any_call("  log line 1")
         mock_log.assert_any_call("  log line 2")
@@ -313,18 +295,14 @@ class TestMonitorProcess:
     @patch("src.watchdog.get_log_mtime")
     @patch("time.sleep")
     @patch("time.time")
-    def test_monitor_process_natural_termination(
-        self, mock_time, mock_sleep, mock_mtime
-    ):
+    def test_monitor_process_natural_termination(self, mock_time, mock_sleep, mock_mtime):
         """検証対象: _monitor_process() 目的: プロセス自然終了時の検出確認"""
         mock_proc = Mock()
         mock_proc.poll.side_effect = [None, 0]  # 1回目は実行中、2回目は終了
         mock_mtime.return_value = 1000.0
         mock_time.return_value = 2000.0
 
-        with patch(
-            "src.watchdog._handle_process_termination", return_value="complete"
-        ) as mock_handle:
+        with patch("src.watchdog._handle_process_termination", return_value="complete") as mock_handle:
             result = _monitor_process(mock_proc, start_time=1500.0)
 
         assert result == "complete"
@@ -418,9 +396,7 @@ class TestMain:
     @patch("src.watchdog._monitor_process")
     @patch("src.watchdog.log_watchdog")
     @patch("time.time")
-    def test_main_complete_on_first_run(
-        self, mock_time, mock_log, mock_monitor, mock_start
-    ):
+    def test_main_complete_on_first_run(self, mock_time, mock_log, mock_monitor, mock_start):
         """検証対象: main() 目的: 初回実行で完了時の動作確認"""
         mock_time.return_value = 1000.0
         mock_proc = Mock()
@@ -438,9 +414,7 @@ class TestMain:
     @patch("src.watchdog.log_watchdog")
     @patch("time.time")
     @patch("time.sleep")
-    def test_main_restart_cycle(
-        self, mock_sleep, mock_time, mock_log, mock_monitor, mock_start
-    ):
+    def test_main_restart_cycle(self, mock_sleep, mock_time, mock_log, mock_monitor, mock_start):
         """検証対象: main() 目的: 再起動サイクルの動作確認"""
         mock_time.side_effect = [1000.0, 1100.0, 1200.0]  # start times
         mock_proc1 = Mock()
@@ -459,9 +433,7 @@ class TestMain:
     @patch("src.watchdog._handle_keyboard_interrupt")
     @patch("src.watchdog.log_watchdog")
     @patch("time.time")
-    def test_main_keyboard_interrupt(
-        self, mock_time, mock_log, mock_handle_interrupt, mock_monitor, mock_start
-    ):
+    def test_main_keyboard_interrupt(self, mock_time, mock_log, mock_handle_interrupt, mock_monitor, mock_start):
         """検証対象: main() 目的: キーボード割り込み時の処理確認"""
         mock_time.return_value = 1000.0
         mock_proc = Mock()
@@ -477,9 +449,7 @@ class TestMain:
     @patch("src.watchdog.log_watchdog")
     @patch("time.time")
     @patch("time.sleep")
-    def test_main_short_runtime_delay(
-        self, mock_sleep, mock_time, mock_log, mock_monitor, mock_start
-    ):
+    def test_main_short_runtime_delay(self, mock_sleep, mock_time, mock_log, mock_monitor, mock_start):
         """検証対象: main() 目的: 短時間終了時の待機処理確認"""
         mock_time.side_effect = [1000.0, 1030.0, 1100.0]  # 30秒で終了、次回起動
         mock_proc1 = Mock()

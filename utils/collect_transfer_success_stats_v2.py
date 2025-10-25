@@ -76,13 +76,8 @@ def main():
 
     sharepoint = load_json(sharepoint_path)
     # SharePoint側のパスを正規化
-    sharepoint_paths = set(
-        normalize_path(e["path"], sharepoint_root) for e in sharepoint
-    )
-    success_paths = [
-        normalize_path(p, sharepoint_root)
-        for p in extract_success_paths(transfer_log_path)
-    ]
+    sharepoint_paths = set(normalize_path(e["path"], sharepoint_root) for e in sharepoint)
+    success_paths = [normalize_path(p, sharepoint_root) for p in extract_success_paths(transfer_log_path)]
 
     overwritten = [p for p in success_paths if p in sharepoint_paths]
     newly_created = [p for p in success_paths if p not in sharepoint_paths]

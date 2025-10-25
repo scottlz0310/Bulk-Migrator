@@ -12,9 +12,7 @@ import sys
 from pathlib import Path
 
 # ログ設定
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -117,9 +115,7 @@ class IntegrationTestRunner:
         logger.info("=== Phase 6: CI/CD・自動化テスト ===")
 
         # GitHub Actions ワークフローファイルの存在確認
-        workflow_file = (
-            self.project_root / ".github" / "workflows" / "quality-check.yml"
-        )
+        workflow_file = self.project_root / ".github" / "workflows" / "quality-check.yml"
         if not workflow_file.exists():
             error_msg = "GitHub Actions ワークフローファイルが見つかりません"
             logger.error(f"❌ {error_msg}")
@@ -279,9 +275,7 @@ class IntegrationTestRunner:
             try:
                 test_method()
             except Exception as e:
-                error_msg = (
-                    f"テスト実行中にエラーが発生しました: {test_method.__name__}: {e}"
-                )
+                error_msg = f"テスト実行中にエラーが発生しました: {test_method.__name__}: {e}"
                 logger.error(error_msg)
                 self.errors.append(error_msg)
 

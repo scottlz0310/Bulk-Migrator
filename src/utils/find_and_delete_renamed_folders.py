@@ -57,20 +57,13 @@ def find_renamed_folders(filelist):
     return [
         f
         for f in filelist
-        if f.get("folder")
-        or f.get("isFolder")
-        or f.get("is_folder")
-        and RENAME_PATTERN.match(f["name"])
+        if f.get("folder") or f.get("isFolder") or f.get("is_folder") and RENAME_PATTERN.match(f["name"])
     ]
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="SharePointリネームフォルダ抽出・削除ツール"
-    )
-    parser.add_argument(
-        "--delete", action="store_true", help="APIで該当フォルダを削除する"
-    )
+    parser = argparse.ArgumentParser(description="SharePointリネームフォルダ抽出・削除ツール")
+    parser.add_argument("--delete", action="store_true", help="APIで該当フォルダを削除する")
     parser.add_argument("--verbose", action="store_true", help="詳細情報を表示する")
     args = parser.parse_args()
 
@@ -78,8 +71,7 @@ def main():
     renamed_folders = [
         f
         for f in filelist
-        if RENAME_PATTERN.match(f["name"])
-        and (f.get("folder") or f.get("isFolder") or f.get("is_folder"))
+        if RENAME_PATTERN.match(f["name"]) and (f.get("folder") or f.get("isFolder") or f.get("is_folder"))
     ]
 
     if not args.delete:

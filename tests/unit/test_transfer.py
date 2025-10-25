@@ -17,9 +17,7 @@ class TestGraphTransferClient:
         """テスト用 GraphTransferClient インスタンス"""
         # 検証対象: GraphTransferClient の初期化
         # 目的: 環境変数から正しく認証情報を取得することを確認
-        with patch(
-            "src.transfer.GraphAuthenticator", return_value=mock_auth.return_value
-        ):
+        with patch("src.transfer.GraphAuthenticator", return_value=mock_auth.return_value):
             return GraphTransferClient(
                 client_id="test_client_id",
                 client_secret="test_client_secret",
@@ -29,9 +27,7 @@ class TestGraphTransferClient:
             )
 
     @pytest.mark.transfer
-    def test_upload_file_to_sharepoint_small_file(
-        self, transfer_client, mock_requests_put, sample_file_info
-    ):
+    def test_upload_file_to_sharepoint_small_file(self, transfer_client, mock_requests_put, sample_file_info):
         """小さなファイルのアップロードテスト"""
         # 検証対象: upload_file_to_sharepoint()
         # 目的: 小さなファイル（4MB未満）が単純PUTでアップロードされることを確認
@@ -43,9 +39,7 @@ class TestGraphTransferClient:
         with patch("requests.get") as mock_get:
             # ファイル情報取得のモック
             mock_get.return_value.status_code = 200
-            mock_get.return_value.json.return_value = {
-                "@microsoft.graph.downloadUrl": "https://test.download.url"
-            }
+            mock_get.return_value.json.return_value = {"@microsoft.graph.downloadUrl": "https://test.download.url"}
 
             # ダウンロードストリームのモック
             mock_download_response = MagicMock()
@@ -76,13 +70,9 @@ class TestGraphTransferClient:
         with patch.object(transfer_client, "_create_upload_session") as mock_session:
             mock_session.return_value = mock_upload_session_response
 
-            with patch.object(
-                transfer_client, "_get_onedrive_file_stream"
-            ) as mock_stream:
+            with patch.object(transfer_client, "_get_onedrive_file_stream") as mock_stream:
                 mock_stream.return_value = MagicMock()
-                mock_stream.return_value.iter_content.return_value = [
-                    b"test_content" * 1000
-                ]
+                mock_stream.return_value.iter_content.return_value = [b"test_content" * 1000]
 
                 with patch("requests.put") as mock_put:
                     mock_put.return_value.status_code = 202
@@ -269,8 +259,8 @@ class TestGraphTransferClient:
         import requests
 
         with patch("requests.post") as mock_post:
-            mock_post.return_value.raise_for_status.side_effect = (
-                requests.exceptions.HTTPError("Session creation failed")
+            mock_post.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError(
+                "Session creation failed"
             )
 
             with pytest.raises(requests.exceptions.HTTPError):
@@ -318,14 +308,10 @@ class TestGraphTransferClient:
         base_url = "https://graph.microsoft.com/v1.0"
         encoded_path = "test%2Ffile.txt"
 
-        with patch.dict(
-            "os.environ", {"SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME": "test@example.com"}
-        ):
+        with patch.dict("os.environ", {"SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME": "test@example.com"}):
             result = _build_onedrive_download_url(base_url, encoded_path, None)
 
-            expected = (
-                f"{base_url}/users/test@example.com/drive/root:/{encoded_path}:/content"
-            )
+            expected = f"{base_url}/users/test@example.com/drive/root:/{encoded_path}:/content"
             assert result == expected
 
     @pytest.mark.transfer
@@ -339,14 +325,10 @@ class TestGraphTransferClient:
         base_url = "https://graph.microsoft.com/v1.0"
         encoded_path = "test%2Ffile.txt"
 
-        with patch.dict(
-            "os.environ", {"SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME": "test@example.com"}
-        ):
+        with patch.dict("os.environ", {"SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME": "test@example.com"}):
             result = _build_onedrive_download_url(base_url, encoded_path, "")
 
-            expected = (
-                f"{base_url}/users/test@example.com/drive/root:/{encoded_path}:/content"
-            )
+            expected = f"{base_url}/users/test@example.com/drive/root:/{encoded_path}:/content"
             assert result == expected
 
     @pytest.mark.transfer
@@ -367,9 +349,7 @@ class TestGraphTransferClient:
         with patch("src.transfer.load_skip_list", return_value=skip_list):
             with patch("src.transfer.is_skipped") as mock_is_skipped:
                 # file2.txt のみスキップされるように設定
-                mock_is_skipped.side_effect = (
-                    lambda f, sl: f["path"] == "/test/file2.txt"
-                )
+                mock_is_skipped.side_effect = lambda f, sl: f["path"] == "/test/file2.txt"
 
                 result = transfer_client.filter_skipped_targets(file_targets)
 
@@ -428,12 +408,8 @@ class TestGraphTransferClient:
             },
         ]
 
-        with patch.object(
-            transfer_client, "list_onedrive_items_with_path", return_value=mock_items
-        ):
-            result = transfer_client.collect_file_targets_from_onedrive(
-                "/test", user_principal_name="test@example.com"
-            )
+        with patch.object(transfer_client, "list_onedrive_items_with_path", return_value=mock_items):
+            result = transfer_client.collect_file_targets_from_onedrive("/test", user_principal_name="test@example.com")
 
             # 結果の検証
             assert len(result) == 2
@@ -462,9 +438,7 @@ class TestGraphTransferClient:
                 }
             )
 
-        with patch.object(
-            transfer_client, "list_onedrive_items_with_path", return_value=mock_items
-        ):
+        with patch.object(transfer_client, "list_onedrive_items_with_path", return_value=mock_items):
             with patch("src.transfer.get_structured_logger") as mock_logger:
                 mock_logger_instance = MagicMock()
                 mock_logger.return_value = mock_logger_instance
@@ -477,11 +451,7 @@ class TestGraphTransferClient:
                 assert len(result) == 1001
 
                 # 進捗ログが呼ばれることを確認（1000件目で1回）
-                progress_calls = [
-                    call
-                    for call in mock_logger_instance.info.call_args_list
-                    if "進捗" in str(call)
-                ]
+                progress_calls = [call for call in mock_logger_instance.info.call_args_list if "進捗" in str(call)]
                 assert len(progress_calls) >= 1
 
     @pytest.mark.transfer
@@ -517,13 +487,8 @@ class TestGraphTransferClient:
             assert result[0]["full_path"] == "file1.txt"
 
             # 正しいURLが呼ばれることを確認
-            expected_url = (
-                f"{transfer_client.base_url}/users/test@example.com"
-                "/drive/root:/test_folder:/children"
-            )
-            mock_get.assert_called_with(
-                expected_url, headers=transfer_client._headers(), timeout=10
-            )
+            expected_url = f"{transfer_client.base_url}/users/test@example.com/drive/root:/test_folder:/children"
+            mock_get.assert_called_with(expected_url, headers=transfer_client._headers(), timeout=10)
 
     @pytest.mark.transfer
     def test_list_onedrive_items_with_path_drive_id(self, transfer_client):
@@ -548,22 +513,15 @@ class TestGraphTransferClient:
             mock_get.return_value.json.return_value = mock_response_data
             mock_get.return_value.raise_for_status.return_value = None
 
-            result = transfer_client.list_onedrive_items_with_path(
-                drive_id="test_drive_id", folder_path="test_folder"
-            )
+            result = transfer_client.list_onedrive_items_with_path(drive_id="test_drive_id", folder_path="test_folder")
 
             # 結果の検証
             assert len(result) == 1
             assert result[0]["name"] == "file1.txt"
 
             # 正しいURLが呼ばれることを確認
-            expected_url = (
-                f"{transfer_client.base_url}/drives/test_drive_id"
-                "/root:/test_folder:/children"
-            )
-            mock_get.assert_called_with(
-                expected_url, headers=transfer_client._headers(), timeout=10
-            )
+            expected_url = f"{transfer_client.base_url}/drives/test_drive_id/root:/test_folder:/children"
+            mock_get.assert_called_with(expected_url, headers=transfer_client._headers(), timeout=10)
 
     @pytest.mark.transfer
     def test_list_onedrive_items_with_path_no_params_error(self, transfer_client):
@@ -574,9 +532,7 @@ class TestGraphTransferClient:
         with pytest.raises(ValueError) as exc_info:
             transfer_client.list_onedrive_items_with_path(folder_path="test_folder")
 
-        assert "user_principal_name か drive_id のいずれかを指定してください" in str(
-            exc_info.value
-        )
+        assert "user_principal_name か drive_id のいずれかを指定してください" in str(exc_info.value)
 
     @pytest.mark.transfer
     def test_list_onedrive_items_with_path_timeout_error(self, transfer_client):
@@ -589,9 +545,7 @@ class TestGraphTransferClient:
         with patch("requests.get") as mock_get:
             mock_get.side_effect = requests.exceptions.Timeout("Request timeout")
 
-            result = transfer_client.list_onedrive_items_with_path(
-                user_principal_name="test@example.com"
-            )
+            result = transfer_client.list_onedrive_items_with_path(user_principal_name="test@example.com")
 
             # タイムアウト時は空のリストが返される
             assert result == []
@@ -607,9 +561,7 @@ class TestGraphTransferClient:
         with patch("requests.get") as mock_get:
             mock_get.side_effect = requests.exceptions.RequestException("Network error")
 
-            result = transfer_client.list_onedrive_items_with_path(
-                user_principal_name="test@example.com"
-            )
+            result = transfer_client.list_onedrive_items_with_path(user_principal_name="test@example.com")
 
             # リクエストエラー時は空のリストが返される
             assert result == []
@@ -727,9 +679,7 @@ class TestGraphTransferClient:
         small_file_info["size"] = 1024
         small_file_info.pop("id", None)  # ファイルIDを削除
 
-        with patch.dict(
-            "os.environ", {"SOURCE_ONEDRIVE_DRIVE_ID": ""}
-        ):  # 空のドライブID
+        with patch.dict("os.environ", {"SOURCE_ONEDRIVE_DRIVE_ID": ""}):  # 空のドライブID
             with patch("requests.get") as mock_get:
                 # ダウンロードレスポンスのモック
                 mock_download_response = MagicMock()
@@ -742,9 +692,7 @@ class TestGraphTransferClient:
                     mock_put.return_value.raise_for_status.return_value = None
 
                     with patch.object(transfer_client, "ensure_sharepoint_folder"):
-                        result = transfer_client._upload_small_file_to_sharepoint(
-                            small_file_info
-                        )
+                        result = transfer_client._upload_small_file_to_sharepoint(small_file_info)
 
                         # 結果の検証
                         assert "id" in result
@@ -808,19 +756,11 @@ class TestGraphTransferClient:
             b"",  # 終了
         ]
 
-        with patch.object(
-            transfer_client, "_create_upload_session", return_value=mock_session
-        ):
-            with patch.object(
-                transfer_client, "_get_onedrive_file_stream", return_value=mock_stream
-            ):
-                with patch.object(
-                    transfer_client, "_upload_chunk"
-                ) as mock_upload_chunk:
+        with patch.object(transfer_client, "_create_upload_session", return_value=mock_session):
+            with patch.object(transfer_client, "_get_onedrive_file_stream", return_value=mock_stream):
+                with patch.object(transfer_client, "_upload_chunk") as mock_upload_chunk:
                     with patch.object(transfer_client, "ensure_sharepoint_folder"):
-                        result = transfer_client._upload_large_file_to_sharepoint(
-                            large_file_info
-                        )
+                        result = transfer_client._upload_large_file_to_sharepoint(large_file_info)
 
                         # 結果の検証
                         assert "message" in result
@@ -862,9 +802,7 @@ class TestGraphTransferClient:
             assert call_args[1]["json"] == expected_payload
 
     @pytest.mark.transfer
-    def test_get_onedrive_file_stream_with_file_id(
-        self, transfer_client, sample_file_info
-    ):
+    def test_get_onedrive_file_stream_with_file_id(self, transfer_client, sample_file_info):
         """OneDriveファイルストリーム取得テスト（ファイルID使用）"""
         # 検証対象: _get_onedrive_file_stream() のファイルID使用
         # 目的: ファイルIDを使った直接アクセス方式を確認
@@ -874,9 +812,7 @@ class TestGraphTransferClient:
                 # ファイル情報取得のレスポンス
                 mock_file_response = MagicMock()
                 mock_file_response.status_code = 200
-                mock_file_response.json.return_value = {
-                    "@microsoft.graph.downloadUrl": "https://test.download.url"
-                }
+                mock_file_response.json.return_value = {"@microsoft.graph.downloadUrl": "https://test.download.url"}
 
                 # ダウンロードストリームのレスポンス
                 mock_download_response = MagicMock()
@@ -894,9 +830,7 @@ class TestGraphTransferClient:
                 assert mock_get.call_count == 2
 
     @pytest.mark.transfer
-    def test_get_onedrive_file_stream_fallback_path(
-        self, transfer_client, sample_file_info
-    ):
+    def test_get_onedrive_file_stream_fallback_path(self, transfer_client, sample_file_info):
         """OneDriveファイルストリーム取得のフォールバック処理テスト"""
         # 検証対象: _get_onedrive_file_stream() のフォールバック処理
         # 目的: ドライブIDまたはファイルIDが無い場合のパスベース方式を確認
@@ -904,9 +838,7 @@ class TestGraphTransferClient:
         file_info_no_id = sample_file_info.copy()
         file_info_no_id.pop("id", None)  # ファイルIDを削除
 
-        with patch.dict(
-            "os.environ", {"SOURCE_ONEDRIVE_DRIVE_ID": ""}
-        ):  # 空のドライブID
+        with patch.dict("os.environ", {"SOURCE_ONEDRIVE_DRIVE_ID": ""}):  # 空のドライブID
             with patch("requests.get") as mock_get:
                 mock_download_response = MagicMock()
                 mock_download_response.raw = b"file_content"
@@ -919,9 +851,7 @@ class TestGraphTransferClient:
                 assert result == b"file_content"
 
     @pytest.mark.transfer
-    def test_get_onedrive_file_stream_file_info_error(
-        self, transfer_client, sample_file_info
-    ):
+    def test_get_onedrive_file_stream_file_info_error(self, transfer_client, sample_file_info):
         """OneDriveファイルストリーム取得のファイル情報エラーテスト"""
         # 検証対象: _get_onedrive_file_stream() のファイル情報取得エラー処理
         # 目的: ファイル情報取得に失敗した場合の例外処理を確認
@@ -937,9 +867,7 @@ class TestGraphTransferClient:
                 assert "ファイル情報の取得に失敗しました" in str(exc_info.value)
 
     @pytest.mark.transfer
-    def test_get_onedrive_file_stream_no_download_url(
-        self, transfer_client, sample_file_info
-    ):
+    def test_get_onedrive_file_stream_no_download_url(self, transfer_client, sample_file_info):
         """OneDriveファイルストリーム取得のダウンロードURL無しエラーテスト"""
         # 検証対象: _get_onedrive_file_stream() のダウンロードURL無しエラー処理
         # 目的: ダウンロードURLが取得できない場合の例外処理を確認
@@ -969,9 +897,7 @@ class TestGraphTransferClient:
         with patch("requests.put") as mock_put:
             mock_put.return_value.raise_for_status.return_value = None
 
-            result = transfer_client._upload_chunk(
-                upload_url, chunk_data, start_byte, end_byte, total_size
-            )
+            result = transfer_client._upload_chunk(upload_url, chunk_data, start_byte, end_byte, total_size)
 
             # 結果の検証
             assert result == mock_put.return_value
@@ -981,9 +907,7 @@ class TestGraphTransferClient:
                 "Content-Range": f"bytes {start_byte}-{end_byte}/{total_size}",
                 "Content-Length": str(len(chunk_data)),
             }
-            mock_put.assert_called_once_with(
-                upload_url, headers=expected_headers, data=chunk_data, timeout=10
-            )
+            mock_put.assert_called_once_with(upload_url, headers=expected_headers, data=chunk_data, timeout=10)
 
     @pytest.mark.transfer
     def test_list_drive_items_recursive_folder_handling(self, transfer_client):
@@ -1050,9 +974,7 @@ class TestGraphTransferClient:
         with patch("src.transfer.load_skip_list", return_value={}):
             with patch("src.transfer.is_skipped", return_value=False):
                 # config_manager のインポートエラーをシミュレート
-                with patch(
-                    "src.config_manager.get_skip_list_path", side_effect=ImportError
-                ):
+                with patch("src.config_manager.get_skip_list_path", side_effect=ImportError):
                     result = transfer_client.filter_skipped_targets(file_targets, None)
 
                     # 結果の検証
@@ -1084,12 +1006,8 @@ class TestGraphTransferClient:
             },
         ]
 
-        with patch.object(
-            transfer_client, "list_onedrive_items_with_path", return_value=mock_items
-        ):
-            result = transfer_client.collect_file_targets_from_onedrive(
-                "/test", user_principal_name="test@example.com"
-            )
+        with patch.object(transfer_client, "list_onedrive_items_with_path", return_value=mock_items):
+            result = transfer_client.collect_file_targets_from_onedrive("/test", user_principal_name="test@example.com")
 
             # 重複が除去されることを確認
             assert len(result) == 1

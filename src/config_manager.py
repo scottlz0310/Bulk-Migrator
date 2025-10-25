@@ -27,9 +27,7 @@ class ConfigManager:
 
     def _load_config(self):
         """config/config.jsonを読み込む"""
-        config_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "config", "config.json"
-        )
+        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "config.json")
         try:
             with open(config_path, encoding="utf-8") as f:
                 self._config_cache = json.load(f)
@@ -89,9 +87,7 @@ def get_skip_list_path() -> str:
 
 
 def get_onedrive_files_path() -> str:
-    return get_config(
-        "onedrive_files_path", "logs/onedrive_files.json", "ONEDRIVE_FILES_PATH"
-    )
+    return get_config("onedrive_files_path", "logs/onedrive_files.json", "ONEDRIVE_FILES_PATH")
 
 
 def get_sharepoint_current_files_path() -> str:
@@ -103,15 +99,11 @@ def get_sharepoint_current_files_path() -> str:
 
 
 def get_checksum_report_path() -> str:
-    return get_config(
-        "checksum_report_path", "logs/checksum_report.json", "CHECKSUM_REPORT_PATH"
-    )
+    return get_config("checksum_report_path", "logs/checksum_report.json", "CHECKSUM_REPORT_PATH")
 
 
 def get_source_onedrive_folder_path() -> str:
-    return get_config(
-        "source_onedrive_user", "TEST-Onedrive", "SOURCE_ONEDRIVE_FOLDER_PATH"
-    )
+    return get_config("source_onedrive_user", "TEST-Onedrive", "SOURCE_ONEDRIVE_FOLDER_PATH")
 
 
 def get_destination_sharepoint_doclib() -> str:
@@ -240,9 +232,7 @@ class SecureConfigManager(ConfigManager):
         }
 
         # .gitignoreの確認
-        gitignore_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), ".gitignore"
-        )
+        gitignore_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".gitignore")
         if os.path.exists(gitignore_path):
             with open(gitignore_path, encoding="utf-8") as f:
                 gitignore_content = f.read()
@@ -250,9 +240,7 @@ class SecureConfigManager(ConfigManager):
                     results["env_in_gitignore"] = True
 
         # sample.envの確認
-        sample_env_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "sample.env"
-        )
+        sample_env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "sample.env")
         results["sample_env_exists"] = os.path.exists(sample_env_path)
 
         # 機密情報キーの確認
@@ -262,17 +250,13 @@ class SecureConfigManager(ConfigManager):
 
         # 推奨事項の生成
         if not results["env_in_gitignore"]:
-            results["recommendations"].append(
-                ".envファイルを.gitignoreに追加してください"
-            )
+            results["recommendations"].append(".envファイルを.gitignoreに追加してください")
 
         if not results["sample_env_exists"]:
             results["recommendations"].append("sample.envファイルを作成してください")
 
         if not results["sensitive_keys_found"]:
-            results["recommendations"].append(
-                "必要な機密情報の環境変数が設定されていません"
-            )
+            results["recommendations"].append("必要な機密情報の環境変数が設定されていません")
 
         return results
 

@@ -83,9 +83,7 @@ class TestConfigManager:
 
         from src.config_manager import ConfigManager
 
-        with patch(
-            "builtins.open", side_effect=json.JSONDecodeError("Invalid JSON", "", 0)
-        ):
+        with patch("builtins.open", side_effect=json.JSONDecodeError("Invalid JSON", "", 0)):
             config_mgr = ConfigManager()
             assert config_mgr._config_cache == {}
 
@@ -246,9 +244,7 @@ class TestSecureConfigManager:
         """機密データマスキングテスト"""
         # 検証対象: SecureConfigManager.mask_sensitive_data()
         # 目的: テキスト内の機密情報がマスクされることを確認
-        test_text = (
-            "client_secret=abc123 and access_token='xyz789' and api_key: secret_key"
-        )
+        test_text = "client_secret=abc123 and access_token='xyz789' and api_key: secret_key"
         masked_text = self.secure_config.mask_sensitive_data(test_text)
 
         assert "client_secret=[MASKED]" in masked_text
@@ -302,6 +298,4 @@ class TestSecureConfigManager:
         assert len(result["sensitive_keys_found"]) == 0
         assert ".envファイルを.gitignoreに追加してください" in result["recommendations"]
         assert "sample.envファイルを作成してください" in result["recommendations"]
-        assert (
-            "必要な機密情報の環境変数が設定されていません" in result["recommendations"]
-        )
+        assert "必要な機密情報の環境変数が設定されていません" in result["recommendations"]

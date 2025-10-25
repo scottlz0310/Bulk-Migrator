@@ -18,9 +18,7 @@ class SecurityIntegration:
         self.auditor = SecurityAuditor()
         self.access_controller = AccessController()
 
-    def setup_secure_logging(
-        self, logger_name: str = "bulk-migration"
-    ) -> logging.Logger:
+    def setup_secure_logging(self, logger_name: str = "bulk-migration") -> logging.Logger:
         """セキュアなロガーの設定"""
         logger = logging.getLogger(logger_name)
 
@@ -30,11 +28,7 @@ class SecurityIntegration:
 
         # セキュアフォーマッターを適用
         handler = logging.FileHandler("logs/secure_transfer.log")
-        handler.setFormatter(
-            SecureLogFormatter(
-                "%(asctime)s UTC - %(levelname)s - %(name)s - %(message)s"
-            )
-        )
+        handler.setFormatter(SecureLogFormatter("%(asctime)s UTC - %(levelname)s - %(name)s - %(message)s"))
 
         logger.addHandler(handler)
         logger.setLevel(logging.INFO)
@@ -52,9 +46,7 @@ class SecurityIntegration:
 
         # 重要ファイルの整合性チェック
         critical_files = [".env", "config/config.json", "src/main.py"]
-        validation_results["integrity"] = self.auditor.check_file_integrity(
-            critical_files
-        )
+        validation_results["integrity"] = self.auditor.check_file_integrity(critical_files)
 
         return validation_results
 
@@ -65,9 +57,7 @@ class SecurityIntegration:
 
         for file_path in critical_files:
             if os.path.exists(file_path):
-                results[file_path] = self.access_controller.check_file_permissions(
-                    file_path
-                )
+                results[file_path] = self.access_controller.check_file_permissions(file_path)
 
                 # 権限が不適切な場合は自動修正
                 if results[file_path]["status"] == "INSECURE_PERMISSIONS":
@@ -82,8 +72,7 @@ class SecurityIntegration:
 
         if not success:
             self.auditor.audit_logger.error(
-                f"TRANSFER_FAILURE - Operation: {operation}, "
-                f"File: {self.auditor._mask_path(file_path)}"
+                f"TRANSFER_FAILURE - Operation: {operation}, File: {self.auditor._mask_path(file_path)}"
             )
 
 

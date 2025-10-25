@@ -84,9 +84,7 @@ class SecurityScanner:
                 }
 
         except FileNotFoundError:
-            logger.info(
-                "❌ bandit が見つかりません。依存関係をインストールしてください。"
-            )
+            logger.info("❌ bandit が見つかりません。依存関係をインストールしてください。")
             return {"status": "error", "message": "bandit が見つかりません"}
         except Exception as e:
             logger.info(f"❌ bandit 実行中にエラーが発生しました: {e}")
@@ -127,10 +125,7 @@ class SecurityScanner:
                     audit_data = json.load(f)
 
                 vulnerabilities_count = len(audit_data.get("vulnerabilities", []))
-                logger.info(
-                    f"✅ pip-audit チェック完了: {vulnerabilities_count} 件の"
-                    "脆弱性を検出"
-                )
+                logger.info(f"✅ pip-audit チェック完了: {vulnerabilities_count} 件の脆弱性を検出")
 
                 return {
                     "status": "success",
@@ -146,9 +141,7 @@ class SecurityScanner:
                 }
 
         except FileNotFoundError:
-            logger.info(
-                "❌ pip-audit が見つかりません。依存関係をインストールしてください。"
-            )
+            logger.info("❌ pip-audit が見つかりません。依存関係をインストールしてください。")
             return {"status": "error", "message": "pip-audit が見つかりません"}
         except Exception as e:
             logger.info(f"❌ pip-audit 実行中にエラーが発生しました: {e}")
@@ -187,9 +180,7 @@ class SecurityScanner:
                     sbom_data = json.load(f)
 
                 components_count = len(sbom_data.get("components", []))
-                logger.info(
-                    f"✅ SBOM 生成完了: {components_count} 個のコンポーネントを記録"
-                )
+                logger.info(f"✅ SBOM 生成完了: {components_count} 個のコンポーネントを記録")
 
                 return {
                     "status": "success",
@@ -205,9 +196,7 @@ class SecurityScanner:
                 }
 
         except FileNotFoundError:
-            logger.info(
-                "❌ cyclonedx-py が見つかりません。依存関係をインストールしてください。"
-            )
+            logger.info("❌ cyclonedx-py が見つかりません。依存関係をインストールしてください。")
             return {"status": "error", "message": "cyclonedx-py が見つかりません"}
         except Exception as e:
             logger.info(f"❌ SBOM 生成中にエラーが発生しました: {e}")
@@ -235,15 +224,9 @@ class SecurityScanner:
         }
 
         # 全体的なステータスを判定
-        if any(
-            result.get("status") == "error"
-            for result in [bandit_result, audit_result, sbom_result]
-        ):
+        if any(result.get("status") == "error" for result in [bandit_result, audit_result, sbom_result]):
             summary["overall_status"] = "error"
-        elif any(
-            result.get("status") == "warning"
-            for result in [bandit_result, audit_result, sbom_result]
-        ):
+        elif any(result.get("status") == "warning" for result in [bandit_result, audit_result, sbom_result]):
             summary["overall_status"] = "warning"
 
         # 推奨事項を生成
@@ -260,9 +243,7 @@ class SecurityScanner:
             )
 
         if not summary["recommendations"]:
-            summary["recommendations"].append(
-                "セキュリティスキャンで問題は検出されませんでした。"
-            )
+            summary["recommendations"].append("セキュリティスキャンで問題は検出されませんでした。")
 
         # 統合レポートを保存
         summary_report_path = self.reports_dir / "security_summary.json"
@@ -291,12 +272,8 @@ class SecurityScanner:
         logger.info("=" * 60)
         logger.info(f"全体ステータス: {summary['overall_status']}")
         logger.info(f"bandit 問題数: {bandit_result.get('issues_count', 'N/A')}")
-        logger.info(
-            f"pip-audit 脆弱性数: {audit_result.get('vulnerabilities_count', 'N/A')}"
-        )
-        logger.info(
-            f"SBOM コンポーネント数: {sbom_result.get('components_count', 'N/A')}"
-        )
+        logger.info(f"pip-audit 脆弱性数: {audit_result.get('vulnerabilities_count', 'N/A')}")
+        logger.info(f"SBOM コンポーネント数: {sbom_result.get('components_count', 'N/A')}")
         logger.info("\n推奨事項:")
         for recommendation in summary["recommendations"]:
             logger.info(f"  • {recommendation}")
@@ -316,13 +293,9 @@ def handle_full_scan(scanner, args):
 
     if args.fail_on_issues:
         bandit_issues = summary["scan_results"]["bandit"].get("issues_count", 0)
-        audit_vulnerabilities = summary["scan_results"]["pip_audit"].get(
-            "vulnerabilities_count", 0
-        )
+        audit_vulnerabilities = summary["scan_results"]["pip_audit"].get("vulnerabilities_count", 0)
         if bandit_issues > 0 or audit_vulnerabilities > 0:
-            logger.info(
-                "\n⚠️  セキュリティ問題が検出されましたが、スキャンは成功しました。"
-            )
+            logger.info("\n⚠️  セキュリティ問題が検出されましたが、スキャンは成功しました。")
             logger.info("詳細はセキュリティレポートを確認してください。")
             # 警告レベルとして処理し、終了コードは 0 を保持
 
@@ -347,9 +320,7 @@ def handle_single_scan(scanner, args):
     if args.fail_on_issues and result:
         issues = result.get("issues_count", 0) + result.get("vulnerabilities_count", 0)
         if issues > 0:
-            logger.info(
-                f"\n⚠️  {args.scan_type} スキャンで {issues} 件の問題が検出されました。"
-            )
+            logger.info(f"\n⚠️  {args.scan_type} スキャンで {issues} 件の問題が検出されました。")
             logger.info("詳細はレポートを確認してください。")
 
 

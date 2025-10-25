@@ -64,9 +64,7 @@ def should_exclude_path(path, include_hidden=False, exclude_dirs=None):
     return False
 
 
-def find_empty_files(
-    search_path=".", extensions=None, include_hidden=False, exclude_dirs=None
-):
+def find_empty_files(search_path=".", extensions=None, include_hidden=False, exclude_dirs=None):
     """空ファイルを検索"""
     empty_files = []
     search_path = Path(search_path)
@@ -80,11 +78,7 @@ def find_empty_files(
         root_path = Path(root)
 
         # 除外すべきディレクトリを削除（os.walkの動作を制御）
-        dirs[:] = [
-            d
-            for d in dirs
-            if not should_exclude_path(root_path / d, include_hidden, exclude_dirs)
-        ]
+        dirs[:] = [d for d in dirs if not should_exclude_path(root_path / d, include_hidden, exclude_dirs)]
 
         for file in files:
             file_path = root_path / file
@@ -149,17 +143,11 @@ def main():
         """,
     )
 
-    parser.add_argument(
-        "--path", default=".", help="検索対象パス (デフォルト: カレントディレクトリ)"
-    )
+    parser.add_argument("--path", default=".", help="検索対象パス (デフォルト: カレントディレクトリ)")
 
-    parser.add_argument(
-        "--delete", action="store_true", help="空ファイルを実際に削除する"
-    )
+    parser.add_argument("--delete", action="store_true", help="空ファイルを実際に削除する")
 
-    parser.add_argument(
-        "--extensions", help="対象とする拡張子をカンマ区切りで指定 (例: .py,.txt,.log)"
-    )
+    parser.add_argument("--extensions", help="対象とする拡張子をカンマ区切りで指定 (例: .py,.txt,.log)")
 
     parser.add_argument(
         "--include-hidden",

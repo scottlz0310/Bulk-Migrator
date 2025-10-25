@@ -128,9 +128,7 @@ class TestSecurityScanner:
         sbom_data = {
             "bomFormat": "CycloneDX",
             "specVersion": "1.4",
-            "components": [
-                {"type": "library", "name": "test-package", "version": "1.0.0"}
-            ],
+            "components": [{"type": "library", "name": "test-package", "version": "1.0.0"}],
         }
 
         sbom_report_path = self.scanner.reports_dir / "sbom.json"
@@ -165,9 +163,7 @@ class TestSecurityScanner:
         audit_result = {"status": "success", "vulnerabilities_count": 1}
         sbom_result = {"status": "success", "components_count": 10}
 
-        summary = self.scanner.generate_summary_report(
-            bandit_result, audit_result, sbom_result
-        )
+        summary = self.scanner.generate_summary_report(bandit_result, audit_result, sbom_result)
 
         assert summary["overall_status"] == "success"
         assert summary["scan_results"]["bandit"] == bandit_result
@@ -188,9 +184,7 @@ class TestSecurityScanner:
         audit_result = {"status": "success", "vulnerabilities_count": 0}
         sbom_result = {"status": "success", "components_count": 10}
 
-        summary = self.scanner.generate_summary_report(
-            bandit_result, audit_result, sbom_result
-        )
+        summary = self.scanner.generate_summary_report(bandit_result, audit_result, sbom_result)
 
         assert summary["overall_status"] == "error"
 
@@ -203,9 +197,7 @@ class TestSecurityScanner:
         audit_result = {"status": "success", "vulnerabilities_count": 0}
         sbom_result = {"status": "success", "components_count": 10}
 
-        summary = self.scanner.generate_summary_report(
-            bandit_result, audit_result, sbom_result
-        )
+        summary = self.scanner.generate_summary_report(bandit_result, audit_result, sbom_result)
 
         assert summary["overall_status"] == "warning"
 

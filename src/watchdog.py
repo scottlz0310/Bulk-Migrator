@@ -98,8 +98,7 @@ def is_transfer_remaining():
 
         remaining = onedrive_count - skiplist_count
         log_watchdog(
-            f"転送残判定: OneDrive={onedrive_count:,}件, "
-            f"スキップリスト={skiplist_count:,}件, 残り={remaining:,}件"
+            f"転送残判定: OneDrive={onedrive_count:,}件, スキップリスト={skiplist_count:,}件, 残り={remaining:,}件"
         )
 
         return remaining > 0
@@ -112,10 +111,7 @@ def is_transfer_remaining():
 def _handle_process_termination(proc, start_time):
     """プロセス自然終了の処理"""
     elapsed = format_time_diff(time.time() - start_time)
-    log_watchdog(
-        f"src.mainが自然終了しました "
-        f"(稼働時間: {elapsed}, 終了コード: {proc.returncode})"
-    )
+    log_watchdog(f"src.mainが自然終了しました (稼働時間: {elapsed}, 終了コード: {proc.returncode})")
     if proc.returncode == 0:
         # 転送対象が残っているかチェック
         if is_transfer_remaining():
@@ -132,9 +128,7 @@ def _handle_freeze_detection(proc, start_time, idle_time):
     elapsed = format_time_diff(time.time() - start_time)
     idle_formatted = format_time_diff(idle_time)
 
-    log_watchdog(
-        f"!!! フリーズ検出 !!! (稼働時間: {elapsed}, 無応答時間: {idle_formatted})"
-    )
+    log_watchdog(f"!!! フリーズ検出 !!! (稼働時間: {elapsed}, 無応答時間: {idle_formatted})")
 
     # 直前のログを記録
     tail_lines = get_tail_lines(MAIN_LOG_PATH, TAIL_LINES)

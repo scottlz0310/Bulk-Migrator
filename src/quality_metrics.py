@@ -37,9 +37,7 @@ class QualityMetrics:
             "tests": {
                 "total": self.test_count,
                 "failed": self.failed_tests,
-                "success_rate": (self.test_count - self.failed_tests) / self.test_count
-                if self.test_count > 0
-                else 0,
+                "success_rate": (self.test_count - self.failed_tests) / self.test_count if self.test_count > 0 else 0,
             },
         }
 
@@ -67,9 +65,7 @@ class PhaseProgress:
             "completed_tasks": self.completed_tasks,
             "remaining_tasks": self.remaining_tasks,
             "target_completion_date": self.target_completion_date.isoformat(),
-            "actual_completion_date": self.actual_completion_date.isoformat()
-            if self.actual_completion_date
-            else None,
+            "actual_completion_date": self.actual_completion_date.isoformat() if self.actual_completion_date else None,
         }
 
 
@@ -149,11 +145,7 @@ class QualityMetricsCollector:
 
             # mypyのエラー出力から行数をカウント
             if result.stdout:
-                error_lines = [
-                    line
-                    for line in result.stdout.split("\n")
-                    if line.strip() and ":" in line
-                ]
+                error_lines = [line for line in result.stdout.split("\n") if line.strip() and ":" in line]
                 return len(error_lines)
 
             return 0
@@ -255,9 +247,7 @@ class QualityMetricsCollector:
 
         return metrics
 
-    def save_metrics(
-        self, metrics: QualityMetrics, filename: str | None = None
-    ) -> Path:
+    def save_metrics(self, metrics: QualityMetrics, filename: str | None = None) -> Path:
         """メトリクスをファイルに保存"""
         if filename is None:
             timestamp = metrics.timestamp.strftime("%Y%m%d_%H%M%S")
@@ -306,9 +296,7 @@ class QualityMetricsCollector:
         latest_file = sorted(metrics_files)[-1]
         return self.load_metrics(latest_file.name)
 
-    def compare_metrics(
-        self, current: QualityMetrics, previous: QualityMetrics | None
-    ) -> dict[str, Any]:
+    def compare_metrics(self, current: QualityMetrics, previous: QualityMetrics | None) -> dict[str, Any]:
         """メトリクスの比較結果を生成"""
         if previous is None:
             return {"status": "初回測定", "changes": {}}
@@ -317,8 +305,7 @@ class QualityMetricsCollector:
             "coverage": current.coverage_percentage - previous.coverage_percentage,
             "lint_errors": current.lint_errors - previous.lint_errors,
             "type_errors": current.type_errors - previous.type_errors,
-            "security_vulnerabilities": current.security_vulnerabilities
-            - previous.security_vulnerabilities,
+            "security_vulnerabilities": current.security_vulnerabilities - previous.security_vulnerabilities,
             "test_count": current.test_count - previous.test_count,
             "failed_tests": current.failed_tests - previous.failed_tests,
         }
@@ -333,27 +320,19 @@ class QualityMetricsCollector:
             regressions.append(f"カバレッジが{abs(changes['coverage']):.1f}%低下")
 
         if changes["lint_errors"] < 0:
-            improvements.append(
-                f"リンティングエラーが{abs(changes['lint_errors'])}件減少"
-            )
+            improvements.append(f"リンティングエラーが{abs(changes['lint_errors'])}件減少")
         elif changes["lint_errors"] > 0:
             regressions.append(f"リンティングエラーが{changes['lint_errors']}件増加")
 
         if changes["type_errors"] < 0:
-            improvements.append(
-                f"型チェックエラーが{abs(changes['type_errors'])}件減少"
-            )
+            improvements.append(f"型チェックエラーが{abs(changes['type_errors'])}件減少")
         elif changes["type_errors"] > 0:
             regressions.append(f"型チェックエラーが{changes['type_errors']}件増加")
 
         if changes["security_vulnerabilities"] < 0:
-            improvements.append(
-                f"セキュリティ脆弱性が{abs(changes['security_vulnerabilities'])}件減少"
-            )
+            improvements.append(f"セキュリティ脆弱性が{abs(changes['security_vulnerabilities'])}件減少")
         elif changes["security_vulnerabilities"] > 0:
-            regressions.append(
-                f"セキュリティ脆弱性が{changes['security_vulnerabilities']}件増加"
-            )
+            regressions.append(f"セキュリティ脆弱性が{changes['security_vulnerabilities']}件増加")
 
         return {
             "status": "比較完了",
@@ -385,16 +364,12 @@ def main():
     # 結果を表示
     logger = logging.getLogger(__name__)
     logger.info("\n=== 品質メトリクス レポート ===")
-    logger.info(
-        f"測定日時: {current_metrics.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}"
-    )
+    logger.info(f"測定日時: {current_metrics.timestamp.strftime('%Y-%m-%d %H:%M:%S UTC')}")
     logger.info(f"カバレッジ: {current_metrics.coverage_percentage:.1f}%")
     logger.info(f"リンティングエラー: {current_metrics.lint_errors}件")
     logger.info(f"型チェックエラー: {current_metrics.type_errors}件")
     logger.info(f"セキュリティ脆弱性: {current_metrics.security_vulnerabilities}件")
-    logger.info(
-        f"テスト: {current_metrics.test_count}件中{current_metrics.failed_tests}件失敗"
-    )
+    logger.info(f"テスト: {current_metrics.test_count}件中{current_metrics.failed_tests}件失敗")
 
     logger = logging.getLogger(__name__)
     if comparison.get("improvements"):

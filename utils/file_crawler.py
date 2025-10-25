@@ -68,9 +68,7 @@ def crawl_onedrive_files(
     if user_principal_name is None:
         user_principal_name = os.getenv("SOURCE_ONEDRIVE_USER_PRINCIPAL_NAME")
         if not user_principal_name:
-            raise ValueError(
-                "user_principal_nameまたは環境変数SOURCE_ONEDRIVE_USER_PRINCIPAL_NAMEが必要です"
-            )
+            raise ValueError("user_principal_nameまたは環境変数SOURCE_ONEDRIVE_USER_PRINCIPAL_NAMEが必要です")
 
     file_targets = client.collect_file_targets_from_onedrive(
         folder_path=root_folder, user_principal_name=user_principal_name
@@ -133,9 +131,7 @@ def load_file_list(file_path: str) -> list[dict[str, Any]]:
     return file_targets
 
 
-def build_skiplist_from_filelist(
-    file_targets: list[dict[str, Any]], skip_list_path: str
-) -> None:
+def build_skiplist_from_filelist(file_targets: list[dict[str, Any]], skip_list_path: str) -> None:
     """
     ファイルリストからスキップリストを生成・保存
 
@@ -183,9 +179,7 @@ def build_skiplist_from_sharepoint(
     return file_targets
 
 
-def compare_file_counts(
-    onedrive_count: int, sharepoint_count: int, expected_count: int | None = None
-) -> None:
+def compare_file_counts(onedrive_count: int, sharepoint_count: int, expected_count: int | None = None) -> None:
     """
     ファイル数の比較と検証結果を出力
 
@@ -222,9 +216,7 @@ def _normalize_skip_list_path(path: str) -> str:
 
 def _handle_sharepoint_rebuild():
     """SharePointからのスキップリスト再構築を処理"""
-    root_folder = input(
-        "SharePointルートフォルダ名 (デフォルト: config設定値): "
-    ).strip()
+    root_folder = input("SharePointルートフォルダ名 (デフォルト: config設定値): ").strip()
     skip_list_path = input("スキップリスト保存先 (デフォルト: config設定値): ").strip()
 
     if skip_list_path:

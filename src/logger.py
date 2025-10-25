@@ -13,11 +13,7 @@ except ImportError:  # pragma: no cover - 実行環境により分岐
 
 if get_transfer_log_path is not None:
     _log_path = get_transfer_log_path()
-    _log_level = (
-        get_config("log_level", "INFO", "LOG_LEVEL")
-        if get_config is not None
-        else "INFO"
-    )
+    _log_level = get_config("log_level", "INFO", "LOG_LEVEL") if get_config is not None else "INFO"
 else:
     # フォールバック（直接実行時など）
     _log_path = os.environ.get(
@@ -34,9 +30,7 @@ logger = logging.getLogger("bulk_migrator")
 logger.setLevel(LOG_LEVEL)
 if not logger.handlers:
     os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
-    handler = RotatingFileHandler(
-        LOG_PATH, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8"
-    )
+    handler = RotatingFileHandler(LOG_PATH, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8")
     formatter = logging.Formatter("[%(asctime)s][%(levelname)s] %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
@@ -113,8 +107,7 @@ class SecureLogger:
         (r"(https?://[^/]*/)([^@]+@)", r"\1[MASKED]@"),
         # JSON内の機密情報
         (
-            r'"(client_secret|access_token|refresh_token|api_key|password|'
-            r'secret|token)"\s*:\s*"([^"]+)"',
+            r'"(client_secret|access_token|refresh_token|api_key|password|' r'secret|token)"\s*:\s*"([^"]+)"',
             r'"\1": "[MASKED]"',
         ),
     ]
@@ -172,9 +165,7 @@ class SecureLogger:
             backupCount=3,
             encoding="utf-8",
         )
-        file_formatter = logging.Formatter(
-            "[%(asctime)s][%(levelname)s][%(name)s] %(message)s"
-        )
+        file_formatter = logging.Formatter("[%(asctime)s][%(levelname)s][%(name)s] %(message)s")
         file_handler.setFormatter(file_formatter)
         self.logger.addHandler(file_handler)
 
@@ -202,9 +193,7 @@ class SecureLogger:
 
         masked_message = message
         for pattern, replacement in self.SENSITIVE_PATTERNS:
-            masked_message = re.sub(
-                pattern, replacement, masked_message, flags=re.IGNORECASE
-            )
+            masked_message = re.sub(pattern, replacement, masked_message, flags=re.IGNORECASE)
 
         return masked_message
 
@@ -216,9 +205,7 @@ class SecureLogger:
             finally:
                 self.logger.removeHandler(h)
 
-    def _log_with_masking(
-        self, level: int, message: str, *args: Any, **kwargs: Any
-    ) -> None:
+    def _log_with_masking(self, level: int, message: str, *args: Any, **kwargs: Any) -> None:
         """機密情報をマスクしてログ出力"""
         masked_message = self.mask_sensitive_data(message)
         self.logger.log(level, masked_message, *args, **kwargs)
@@ -246,23 +233,18 @@ class SecureLogger:
     def log_transfer_start(self, file_info: dict[str, Any]):
         """転送開始ログ（セキュア版）"""
         message = (
-            f"START: {file_info['path']} (size={file_info['size']}, "
-            f"lastModified={file_info['lastModifiedDateTime']})"
+            f"START: {file_info['path']} (size={file_info['size']}, lastModified={file_info['lastModifiedDateTime']})"
         )
         self.info(message)
 
-    def log_transfer_success(
-        self, file_info: dict[str, Any], elapsed: float | None = None
-    ):
+    def log_transfer_success(self, file_info: dict[str, Any], elapsed: float | None = None):
         """転送成功ログ（セキュア版）"""
         message = f"SUCCESS: {file_info['path']}"
         if elapsed is not None:
             message += f" [elapsed: {elapsed:.2f}s]"
         self.info(message)
 
-    def log_transfer_error(
-        self, file_info: dict[str, Any], error: str, retry_count: int = 0
-    ):
+    def log_transfer_error(self, file_info: dict[str, Any], error: str, retry_count: int = 0):
         """転送エラーログ（セキュア版）"""
         message = f"ERROR: {file_info['path']} [retry={retry_count}] {error}"
         self.error(message)

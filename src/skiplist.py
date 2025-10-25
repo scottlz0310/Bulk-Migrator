@@ -31,16 +31,12 @@ def save_skip_list(skip_list: list[dict[str, Any]], path: str = SKIP_LIST_PATH):
 def is_skipped(file_info: dict[str, Any], skip_list: list[dict[str, Any]]) -> bool:
     for item in skip_list:
         # パス＋ファイル名のみでスキップ判定（サイズ・タイムスタンプは無視）
-        if item.get("path") == file_info.get("path") and item.get(
-            "name"
-        ) == file_info.get("name"):
+        if item.get("path") == file_info.get("path") and item.get("name") == file_info.get("name"):
             return True
     return False
 
 
-def add_to_skip_list(
-    file_info: dict[str, Any], path: str = SKIP_LIST_PATH, lock_path: str = LOCK_PATH
-):
+def add_to_skip_list(file_info: dict[str, Any], path: str = SKIP_LIST_PATH, lock_path: str = LOCK_PATH):
     with FileLock(lock_path, timeout=10):
         skip_list = load_skip_list(path)
         if not is_skipped(file_info, skip_list):

@@ -171,10 +171,7 @@ class QualityAlertSystem:
             )
 
         # セキュリティ脆弱性チェック
-        if (
-            metrics.security_vulnerabilities
-            > self.thresholds.max_security_vulnerabilities
-        ):
+        if metrics.security_vulnerabilities > self.thresholds.max_security_vulnerabilities:
             alerts.append(
                 QualityAlert(
                     alert_type="security_vulnerabilities",
@@ -197,9 +194,7 @@ class QualityAlertSystem:
                     alert_type="failed_tests",
                     severity="HIGH",
                     message=(
-                        f"テスト失敗が発生しました: "
-                        f"{metrics.failed_tests}件 > "
-                        f"{self.thresholds.max_failed_tests}件"
+                        f"テスト失敗が発生しました: {metrics.failed_tests}件 > {self.thresholds.max_failed_tests}件"
                     ),
                     current_value=metrics.failed_tests,
                     threshold_value=self.thresholds.max_failed_tests,
@@ -231,16 +226,12 @@ class QualityAlertSystem:
         logger.info(f"アラートを保存しました: {filepath}")
         return filepath
 
-    def send_alert_notification(
-        self, alerts: list[QualityAlert], email_config: dict[str, str] | None = None
-    ) -> bool:
+    def send_alert_notification(self, alerts: list[QualityAlert], email_config: dict[str, str] | None = None) -> bool:
         """アラート通知を送信（メール）"""
         if not alerts or not email_config or not EMAIL_AVAILABLE:
             if not EMAIL_AVAILABLE:
                 logger = logging.getLogger(__name__)
-                logger.warning(
-                    "メール機能が利用できません。アラートはファイルに保存されました。"
-                )
+                logger.warning("メール機能が利用できません。アラートはファイルに保存されました。")
             return False
 
         try:
@@ -264,9 +255,7 @@ class QualityAlertSystem:
                 with smtplib.SMTP(email_config["smtp_server"], smtp_port) as server:
                     if email_config.get("smtp_username"):
                         server.starttls()
-                        server.login(
-                            email_config["smtp_username"], email_config["smtp_password"]
-                        )
+                        server.login(email_config["smtp_username"], email_config["smtp_password"])
                     server.send_message(msg)
 
                 logger = logging.getLogger(__name__)
@@ -274,9 +263,7 @@ class QualityAlertSystem:
                 return True
             else:
                 logger = logging.getLogger(__name__)
-                logger.warning(
-                    "メール設定が不完全です。アラートはファイルに保存されました。"
-                )
+                logger.warning("メール設定が不完全です。アラートはファイルに保存されました。")
                 return False
 
         except Exception as e:
@@ -317,31 +304,21 @@ class QualityAlertSystem:
         body += "詳細は品質レポートを確認してください。\n"
         return body
 
-    def generate_monthly_report(
-        self, target_month: datetime | None = None
-    ) -> ReviewReport:
+    def generate_monthly_report(self, target_month: datetime | None = None) -> ReviewReport:
         """月次レビューレポートを生成"""
         if target_month is None:
             target_month = datetime.now(UTC).replace(day=1)
 
         # 期間設定
-        period_start = target_month.replace(
-            day=1, hour=0, minute=0, second=0, microsecond=0
-        )
+        period_start = target_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         if period_start.month == 12:
-            period_end = period_start.replace(
-                year=period_start.year + 1, month=1
-            ) - timedelta(seconds=1)
+            period_end = period_start.replace(year=period_start.year + 1, month=1) - timedelta(seconds=1)
         else:
-            period_end = period_start.replace(month=period_start.month + 1) - timedelta(
-                seconds=1
-            )
+            period_end = period_start.replace(month=period_start.month + 1) - timedelta(seconds=1)
 
         return self._generate_report("monthly", period_start, period_end)
 
-    def generate_quarterly_report(
-        self, target_quarter: tuple[int, int] | None = None
-    ) -> ReviewReport:
+    def generate_quarterly_report(self, target_quarter: tuple[int, int] | None = None) -> ReviewReport:
         """四半期レビューレポートを生成"""
         if target_quarter is None:
             now = datetime.now(UTC)
@@ -355,15 +332,11 @@ class QualityAlertSystem:
         if start_month + 2 == 12:
             period_end = datetime(year + 1, 1, 1, tzinfo=UTC) - timedelta(seconds=1)
         else:
-            period_end = datetime(year, start_month + 3, 1, tzinfo=UTC) - timedelta(
-                seconds=1
-            )
+            period_end = datetime(year, start_month + 3, 1, tzinfo=UTC) - timedelta(seconds=1)
 
         return self._generate_report("quarterly", period_start, period_end)
 
-    def generate_semi_annual_report(
-        self, target_half: tuple[int, int] | None = None
-    ) -> ReviewReport:
+    def generate_semi_annual_report(self, target_half: tuple[int, int] | None = None) -> ReviewReport:
         """半年レビューレポートを生成"""
         if target_half is None:
             now = datetime.now(UTC)
@@ -380,14 +353,10 @@ class QualityAlertSystem:
 
         return self._generate_report("semi-annual", period_start, period_end)
 
-    def _generate_report(
-        self, report_type: str, period_start: datetime, period_end: datetime
-    ) -> ReviewReport:
+    def _generate_report(self, report_type: str, period_start: datetime, period_end: datetime) -> ReviewReport:
         """レポートを生成"""
         # メトリクスファイルを収集
-        metrics_files = list(
-            (self.project_root / "quality_reports").glob("quality_metrics_*.json")
-        )
+        metrics_files = list((self.project_root / "quality_reports").glob("quality_metrics_*.json"))
         period_metrics = []
 
         for file in metrics_files:
@@ -424,9 +393,7 @@ class QualityAlertSystem:
             generated_at=datetime.now(UTC),
         )
 
-    def _calculate_metrics_summary(
-        self, metrics_data: list[dict[str, Any]]
-    ) -> dict[str, Any]:
+    def _calculate_metrics_summary(self, metrics_data: list[dict[str, Any]]) -> dict[str, Any]:
         """メトリクスサマリーを計算"""
         if not metrics_data:
             return {}
@@ -479,9 +446,7 @@ class QualityAlertSystem:
             "security_issues_trend": last["security_issues"] - first["security_issues"],
         }
 
-    def _generate_recommendations(
-        self, summary: dict[str, Any], trends: dict[str, Any]
-    ) -> list[str]:
+    def _generate_recommendations(self, summary: dict[str, Any], trends: dict[str, Any]) -> list[str]:
         """推奨事項を生成"""
         recommendations = []
 
@@ -492,29 +457,19 @@ class QualityAlertSystem:
                 )
 
             if trends.get("coverage_trend", 0) < 0:
-                recommendations.append(
-                    "カバレッジが低下傾向にあります。新機能のテスト追加を確認してください。"
-                )
+                recommendations.append("カバレッジが低下傾向にあります。新機能のテスト追加を確認してください。")
 
         if "lint_errors" in summary and summary["lint_errors"]["latest"] > 0:
-            recommendations.append(
-                "リンティングエラーが残っています。コード品質の改善を実施してください。"
-            )
+            recommendations.append("リンティングエラーが残っています。コード品質の改善を実施してください。")
 
         if "type_errors" in summary and summary["type_errors"]["latest"] > 0:
-            recommendations.append(
-                "型チェックエラーが残っています。型ヒントの追加・修正を実施してください。"
-            )
+            recommendations.append("型チェックエラーが残っています。型ヒントの追加・修正を実施してください。")
 
         if "security_issues" in summary and summary["security_issues"]["latest"] > 0:
-            recommendations.append(
-                "セキュリティ問題が検出されています。緊急対応が必要です。"
-            )
+            recommendations.append("セキュリティ問題が検出されています。緊急対応が必要です。")
 
         if not recommendations:
-            recommendations.append(
-                "品質指標は良好です。現在の品質レベルを維持してください。"
-            )
+            recommendations.append("品質指標は良好です。現在の品質レベルを維持してください。")
 
         return recommendations
 
@@ -564,9 +519,7 @@ def main():
                 logger.info("品質閾値内です。アラートはありません。")
         else:
             logger = logging.getLogger(__name__)
-            logger.warning(
-                "メトリクスデータが見つかりません。先に品質メトリクスを収集してください。"
-            )
+            logger.warning("メトリクスデータが見つかりません。先に品質メトリクスを収集してください。")
 
     if args.monthly:
         report = alert_system.generate_monthly_report()
@@ -582,10 +535,7 @@ def main():
 
     if not any([args.check, args.monthly, args.quarterly, args.semi_annual]):
         logger = logging.getLogger(__name__)
-        logger.info(
-            "使用方法: python src/quality_alerts.py [--check] [--monthly] "
-            "[--quarterly] [--semi-annual]"
-        )
+        logger.info("使用方法: python src/quality_alerts.py [--check] [--monthly] [--quarterly] [--semi-annual]")
 
 
 if __name__ == "__main__":

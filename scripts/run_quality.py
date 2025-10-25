@@ -9,9 +9,7 @@ import tomllib
 from pathlib import Path
 
 # ログ設定
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -79,9 +77,7 @@ def get_default_dirs(config: dict) -> list[str]:
     return ["src/"]
 
 
-def get_quality_commands(
-    directories: list[str], config: dict
-) -> list[tuple[str, list[str]]]:
+def get_quality_commands(directories: list[str], config: dict) -> list[tuple[str, list[str]]]:
     """品質チェックコマンドを取得"""
     commands = [
         ("リンティング", ["uv", "run", "ruff", "check"] + directories),
@@ -120,17 +116,13 @@ def setup_parser(default_dirs: list[str]) -> argparse.ArgumentParser:
         default=default_dirs,
         help=f"チェック対象ディレクトリ (デフォルト: {' '.join(default_dirs)})",
     )
-    parser.add_argument(
-        "--no-security", action="store_true", help="セキュリティチェックをスキップ"
-    )
+    parser.add_argument("--no-security", action="store_true", help="セキュリティチェックをスキップ")
     parser.add_argument("--codeql-only", action="store_true", help="CodeQLのみ実行")
     parser.add_argument("-v", "--verbose", action="store_true", help="詳細ログを表示")
     return parser
 
 
-def run_format_checks(
-    existing_dirs: list[str], project_root: Path, verbose: bool
-) -> None:
+def run_format_checks(existing_dirs: list[str], project_root: Path, verbose: bool) -> None:
     """自動整形を実行"""
     logger.info("🎨 自動整形を実行中...")
     format_commands = get_format_commands(existing_dirs)
@@ -138,9 +130,7 @@ def run_format_checks(
         run_command(name, cmd, project_root, verbose)
 
 
-def run_quality_checks(
-    existing_dirs: list[str], config: dict, project_root: Path, verbose: bool
-) -> bool:
+def run_quality_checks(existing_dirs: list[str], config: dict, project_root: Path, verbose: bool) -> bool:
     """品質チェックを実行し、失敗があったかを返す"""
     quality_commands = get_quality_commands(existing_dirs, config)
     failed = False
@@ -190,9 +180,7 @@ def main():
 
     # 各チェックを実行
     run_format_checks(existing_dirs, project_root, args.verbose)
-    quality_failed = run_quality_checks(
-        existing_dirs, config, project_root, args.verbose
-    )
+    quality_failed = run_quality_checks(existing_dirs, config, project_root, args.verbose)
     security_failed = run_security_checks(args, existing_dirs, project_root)
 
     if quality_failed or security_failed:

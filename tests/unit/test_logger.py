@@ -109,9 +109,7 @@ class TestSecureLogger:
             log_path = os.path.join(temp_dir, "test.log")
             secure_logger = SecureLogger("test_logger", log_path)
 
-            test_message = (
-                "Request with access_token='eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9'"
-            )
+            test_message = "Request with access_token='eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9'"
             try:
                 jwt_snippet = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9"
                 masked_message = secure_logger.mask_sensitive_data(test_message)
@@ -169,9 +167,7 @@ class TestSecureLogger:
             log_path = os.path.join(temp_dir, "test.log")
             secure_logger = SecureLogger("test_logger", log_path)
 
-            test_message = (
-                "client_secret=abc123 and api_key: xyz789 and password='secret123'"
-            )
+            test_message = "client_secret=abc123 and api_key: xyz789 and password='secret123'"
             try:
                 masked_message = secure_logger.mask_sensitive_data(test_message)
                 assert isinstance(masked_message, str)
@@ -238,9 +234,7 @@ class TestSecureLogger:
 
                 secure_logger.log_transfer_start(self.test_file_info)
                 secure_logger.log_transfer_success(self.test_file_info, elapsed=1.5)
-                secure_logger.log_transfer_error(
-                    self.test_file_info, "Test error", retry_count=2
-                )
+                secure_logger.log_transfer_error(self.test_file_info, "Test error", retry_count=2)
                 secure_logger.log_transfer_skip(self.test_file_info)
 
                 # ログメソッドが呼び出されたことを確認
@@ -332,9 +326,7 @@ class TestSecureLogger:
 
     @patch("src.logger.get_config")
     @patch("src.logger.get_transfer_log_path")
-    def test_setup_logger_with_config(
-        self, _mock_get_transfer_log_path: Any, _mock_get_config: Any
-    ):
+    def test_setup_logger_with_config(self, _mock_get_transfer_log_path: Any, _mock_get_config: Any):
         """設定管理を使用したロガーセットアップテスト"""
         # 検証対象: SecureLogger._setup_logger()
         # 目的: 設定管理を使用したロガーセットアップが正常に動作することを確認
@@ -359,9 +351,7 @@ class TestSecureLogger:
         "src.logger.get_transfer_log_path",
         side_effect=ImportError("NA"),
     )
-    def test_setup_logger_import_error_fallback(
-        self, _mock_get_transfer_log_path: Any, _mock_get_config: Any
-    ):
+    def test_setup_logger_import_error_fallback(self, _mock_get_transfer_log_path: Any, _mock_get_config: Any):
         """設定管理インポートエラー時のフォールバックテスト"""
         # 検証対象: SecureLogger._setup_logger() のImportError処理
         # 目的: config_manager インポートエラー時のフォールバック処理を確認
@@ -433,9 +423,7 @@ class TestSecureLogger:
         "src.logger.get_transfer_log_path",
         side_effect=ImportError("NA"),
     )
-    def test_setup_logger_import_error_default_values(
-        self, _mock_get_transfer_log_path: Any, _mock_get_config: Any
-    ):
+    def test_setup_logger_import_error_default_values(self, _mock_get_transfer_log_path: Any, _mock_get_config: Any):
         """設定管理インポートエラー時のデフォルト値テスト"""
         # 検証対象: SecureLogger._setup_logger() のImportError処理のデフォルト値
         # 目的: 環境変数が設定されていない場合のデフォルト値を確認
@@ -471,9 +459,7 @@ class TestSecureLogger:
                             "src.logger.get_transfer_log_path",
                             side_effect=ImportError("NA"),
                         ):
-                            secure_logger = SecureLogger(
-                                f"test_logger_{level.lower()}", log_path
-                            )
+                            secure_logger = SecureLogger(f"test_logger_{level.lower()}", log_path)
 
                             try:
                                 # ログレベルが設定されていることを確認
