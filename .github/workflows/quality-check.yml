@@ -30,18 +30,28 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v3
+        continue-on-error: true
         with:
           version: latest
           enable-cache: true
           cache-dependency-glob: |
             pyproject.toml
             uv.lock
+
+      - name: Ensure uv is available
+        run: |
+          if ! command -v uv &> /dev/null; then
+            echo "uv not found, installing via pip..."
+            python -m pip install --upgrade pip
+            pip install uv
+          fi
+          uv --version
 
       - name: Install dependencies
         run: uv sync --python ${{ matrix.python-version }}
@@ -81,7 +91,11 @@ jobs:
           fi
 
       - name: Upload coverage to Codecov
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13' && env.CODECOV_TOKEN != ''
+        if: >-
+          matrix.os == 'ubuntu-latest' &&
+          matrix.python-version == '3.13' &&
+          env.CODECOV_TOKEN != '' &&
+          github.event_name != 'act_local'
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
@@ -91,8 +105,8 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Publish test report
+        if: (success() || failure()) && github.event_name != 'act_local'
         uses: dorny/test-reporter@v2
-        if: success() || failure()
         continue-on-error: true
         with:
           name: Test results (${{ matrix.os }}, Python ${{ matrix.python-version }})
