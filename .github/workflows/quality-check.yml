@@ -45,6 +45,7 @@ jobs:
             uv.lock
 
       - name: Ensure uv is available
+        shell: bash
         run: |
           if ! command -v uv &> /dev/null; then
             echo "uv not found, installing via pip..."
