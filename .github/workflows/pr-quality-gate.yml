@@ -79,7 +79,7 @@ jobs:
 
       - name: 品質ゲート結果コメント
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const { lint_failed, format_failed, type_failed, test_failed } = process.env;
