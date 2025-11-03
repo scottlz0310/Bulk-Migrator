@@ -1,0 +1,71 @@
+services:
+  renovate:
+    image: renovate/renovate:latest
+    container_name: renovate-bulk-migrator
+    environment:
+      # GitHub認証（シェルの環境変数から取得）
+      - RENOVATE_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
+      - RENOVATE_PLATFORM=github
+      - GITHUB_COM_TOKEN=${GITHUB_PERSONAL_ACCESS_TOKEN}
+
+      # リポジトリ設定
+      - RENOVATE_REPOSITORIES=${GITHUB_REPOSITORY}
+
+      # ログレベル
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+
+      # Renovate設定
+      - RENOVATE_CONFIG_FILE=/usr/src/app/renovate.json
+      - RENOVATE_BASE_DIR=/tmp/renovate
+
+      # Git設定
+      - RENOVATE_GIT_AUTHOR=${GIT_AUTHOR_NAME} <${GIT_AUTHOR_EMAIL}>
+
+      # オプション設定
+      - RENOVATE_AUTODISCOVER=false
+      - RENOVATE_DRY_RUN=${DRY_RUN:-false}
+      - RENOVATE_PRINT_CONFIG=${PRINT_CONFIG:-false}
+
+      # キャッシュ設定
+      - RENOVATE_REPOSITORY_CACHE=${REPOSITORY_CACHE:-enabled}
+
+      # スケジュール無視（即座に実行）
+      - RENOVATE_FORCE_CLI=${RENOVATE_FORCE_CLI:-false}
+
+      # セキュリティ
+      - RENOVATE_ALLOWED_POST_UPGRADE_COMMANDS=[]
+
+    volumes:
+      # Renovate設定ファイルをマウント
+      - ./renovate.json:/usr/src/app/renovate.json:ro
+
+      # キャッシュディレクトリ
+      - renovate-cache:/tmp/renovate
+
+      # ログディレクトリ（オプション）
+      - ./logs/renovate:/tmp/renovate/logs
+
+    restart: "no"
+
+    # リソース制限
+    mem_limit: 1g
+    cpus: 1.0
+
+    # ネットワーク設定
+    networks:
+      - renovate-net
+
+networks:
+  renovate-net:
+    driver: bridge
+
+volumes:
+  renovate-cache:
+    driver: local
+# 実行方法:
+# 1. GitHub Personal Access Tokenを環境変数にエクスポート:
+#    export GITHUB_PERSONAL_ACCESS_TOKEN="your_token_here"
+# 2. docker-compose -f docker-compose.renovate.yml --env-file .env.renovate up
+#
+# 定期実行（systemd）例:
+# sudo systemctl enable renovate.service

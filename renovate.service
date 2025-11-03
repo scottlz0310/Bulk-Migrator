@@ -1,0 +1,54 @@
+# Renovate systemd service
+# システム起動時にRenovateを1回実行します
+#
+# インストール方法:
+# 1. このファイルをsystemdディレクトリにコピー:
+#    sudo cp renovate.service /etc/systemd/system/
+#
+# 2. ファイル内のパスとユーザー名を環境に合わせて編集:
+#    sudo nano /etc/systemd/system/renovate.service
+#
+# 3. サービスを有効化:
+#    sudo systemctl daemon-reload
+#    sudo systemctl enable renovate.service
+#
+# 4. 動作確認（手動実行）:
+#    sudo systemctl start renovate.service
+#    sudo systemctl status renovate.service
+#
+# 5. ログ確認:
+#    sudo journalctl -u renovate.service -f
+
+[Unit]
+Description=Renovate Dependency Updates on Boot
+Documentation=https://docs.renovatebot.com/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=hiro
+Group=hiro
+WorkingDirectory=/home/hiro/workspace/Bulk-Migrator
+
+# 環境変数ファイルから読み込み
+EnvironmentFile=/etc/systemd/system/renovate.env
+
+# Renovate実行コマンド
+ExecStart=/usr/bin/docker-compose -f docker-compose.renovate.yml --env-file .env.renovate up --abort-on-container-exit
+
+# ログ出力
+StandardOutput=journal
+StandardError=journal
+
+# セキュリティ設定
+PrivateTmp=true
+NoNewPrivileges=true
+
+# リトライ設定（失敗時に3回まで再試行）
+Restart=on-failure
+RestartSec=30
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target

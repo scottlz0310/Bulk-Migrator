@@ -165,6 +165,40 @@ Bulk-Migrator/
 - `uv run python scripts/security_scan.py`: bandit・pip-audit・SBOM の一括実行（`security_reports/`）。
 - `make lint` / `make test` / `make quality`: uv コマンドをまとめて実行するショートカット。
 
+## 依存関係の自動更新（Renovate）
+
+このプロジェクトでは、Dockerベースのセルフホスト型Renovateを使用して依存関係を自動管理しています。
+
+### Renovateの導入手順
+
+詳細な手順は `doc/RENOVATE_SETUP.md` を参照してください。
+
+1. 環境設定ファイルを作成:
+
+   ```bash
+   cp .env.renovate.example .env.renovate
+   # GitHub Personal Access Token を設定
+   ```
+
+2. 初回実行（ドライラン）:
+
+   ```bash
+   docker-compose -f docker-compose.renovate.yml --env-file .env.renovate up
+   ```
+
+3. 定期実行の設定（cron例）:
+
+   ```bash
+   0 2 * * * cd /path/to/Bulk-Migrator && docker-compose -f docker-compose.renovate.yml --env-file .env.renovate up --abort-on-container-exit
+   ```
+
+### Renovate設定
+
+- `renovate.json`: 自動更新の動作設定
+- パッチ・マイナーバージョンは自動マージ
+- メジャーバージョンは手動レビュー必須
+- セキュリティアップデートは優先度高で処理
+
 ## ログと生成物
 
 - `logs/transfer_start_success_error.log`: ローテーション付き転送ログ。

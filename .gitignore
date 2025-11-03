@@ -1,4 +1,5 @@
 .env*
+!.env.renovate.example
 logs*/
 *.pyc
 __pycache__/
@@ -34,6 +35,7 @@ build/
 *.whl
 .env
 .env.*
+!.env.renovate.example
 .vscode.bak.*
 uv.lock
 .DS_Store
