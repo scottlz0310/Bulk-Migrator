@@ -27,6 +27,20 @@
             "enabled": true
         },
         {
+            "description": "Python バージョンファイルは安定版のみ更新",
+            "matchManagers": [
+                "pyenv"
+            ],
+            "matchFiles": [
+                ".python-version"
+            ],
+            "allowedVersions": "!/^3\\.(14|15|16|17|18|19|20)$/",
+            "automerge": false,
+            "addLabels": [
+                "python-version"
+            ]
+        },
+        {
             "description": "パッチバージョンは自動マージ",
             "matchUpdateTypes": [
                 "patch"
