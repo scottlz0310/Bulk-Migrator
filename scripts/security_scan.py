@@ -147,7 +147,6 @@ class SecurityScanner:
             logger.info(f"❌ safety 実行中にエラーが発生しました: {e}")
             return {"status": "error", "message": str(e)}
 
-
     def generate_summary_report(
         self,
         bandit_result: dict[str, Any],

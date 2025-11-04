@@ -74,85 +74,45 @@ class TestSecurityScanner:
         assert "bandit error" in result["message"]
 
     @patch("subprocess.run")
-    def test_run_pip_audit_success(self, mock_subprocess):
-        """pip-auditスキャン成功テスト"""
-        # 検証対象: SecurityScanner.run_pip_audit()
-        # 目的: pip-auditスキャンが正常に実行されることを確認
+    def test_run_safety_check_success(self, mock_subprocess):
+        """safetyスキャン成功テスト"""
+        # 検証対象: SecurityScanner.run_safety_check()
+        # 目的: safetyスキャンが正常に実行されることを確認
 
         mock_subprocess.return_value = MagicMock(returncode=0, stderr="")
 
-        # テスト用のauditレポートを作成
-        audit_report = {
-            "vulnerabilities": [
-                {
-                    "package": "test-package",
-                    "vulnerability_id": "CVE-2023-1234",
-                    "severity": "HIGH",
-                }
-            ]
-        }
+        # テスト用のsafetyレポートを作成
+        safety_report = [
+            {
+                "package": "test-package",
+                "vulnerability_id": "CVE-2023-1234",
+                "severity": "HIGH",
+            }
+        ]
 
-        audit_report_path = self.scanner.reports_dir / "pip_audit_report.json"
-        with open(audit_report_path, "w") as f:
-            json.dump(audit_report, f)
+        safety_report_path = self.scanner.reports_dir / "safety_report.json"
+        with open(safety_report_path, "w") as f:
+            json.dump(safety_report, f)
 
-        result = self.scanner.run_pip_audit()
+        result = self.scanner.run_safety_check()
 
         assert result["status"] == "success"
         assert result["vulnerabilities_count"] == 1
-        assert "pip_audit_report.json" in result["report_path"]
+        assert "safety_report.json" in result["report_path"]
 
     @patch("subprocess.run")
-    def test_run_pip_audit_error(self, mock_subprocess):
-        """pip-auditスキャンエラーテスト"""
-        # 検証対象: SecurityScanner.run_pip_audit()
-        # 目的: pip-auditスキャンでエラーが発生した場合の処理を確認
+    def test_run_safety_check_error(self, mock_subprocess):
+        """safetyスキャンエラーテスト"""
+        # 検証対象: SecurityScanner.run_safety_check()
+        # 目的: safetyスキャンでエラーが発生した場合の処理を確認
 
         # 終了コード 2 以上でエラーとして処理される
-        mock_subprocess.return_value = MagicMock(returncode=2, stderr="audit error")
+        mock_subprocess.return_value = MagicMock(returncode=2, stderr="safety error")
 
-        result = self.scanner.run_pip_audit()
-
-        assert result["status"] == "error"
-        assert "audit error" in result["message"]
-
-    @patch("subprocess.run")
-    def test_generate_sbom_success(self, mock_subprocess):
-        """SBOM生成成功テスト"""
-        # 検証対象: SecurityScanner.generate_sbom()
-        # 目的: SBOMが正常に生成されることを確認
-
-        mock_subprocess.return_value = MagicMock(returncode=0, stderr="")
-
-        # テスト用のSBOMを作成
-        sbom_data = {
-            "bomFormat": "CycloneDX",
-            "specVersion": "1.4",
-            "components": [{"type": "library", "name": "test-package", "version": "1.0.0"}],
-        }
-
-        sbom_report_path = self.scanner.reports_dir / "sbom.json"
-        with open(sbom_report_path, "w") as f:
-            json.dump(sbom_data, f)
-
-        result = self.scanner.generate_sbom()
-
-        assert result["status"] == "success"
-        assert result["components_count"] == 1
-        assert "sbom.json" in result["report_path"]
-
-    @patch("subprocess.run")
-    def test_generate_sbom_error(self, mock_subprocess):
-        """SBOM生成エラーテスト"""
-        # 検証対象: SecurityScanner.generate_sbom()
-        # 目的: SBOM生成でエラーが発生した場合の処理を確認
-
-        mock_subprocess.return_value = MagicMock(returncode=1, stderr="sbom error")
-
-        result = self.scanner.generate_sbom()
+        result = self.scanner.run_safety_check()
 
         assert result["status"] == "error"
-        assert "sbom error" in result["message"]
+        assert "safety error" in result["message"]
 
     def test_generate_summary_report(self):
         """統合レポート生成テスト"""
@@ -160,15 +120,13 @@ class TestSecurityScanner:
         # 目的: 統合レポートが正常に生成されることを確認
 
         bandit_result = {"status": "success", "issues_count": 2}
-        audit_result = {"status": "success", "vulnerabilities_count": 1}
-        sbom_result = {"status": "success", "components_count": 10}
+        safety_result = {"status": "success", "vulnerabilities_count": 1}
 
-        summary = self.scanner.generate_summary_report(bandit_result, audit_result, sbom_result)
+        summary = self.scanner.generate_summary_report(bandit_result, safety_result)
 
         assert summary["overall_status"] == "success"
         assert summary["scan_results"]["bandit"] == bandit_result
-        assert summary["scan_results"]["pip_audit"] == audit_result
-        assert summary["scan_results"]["sbom"] == sbom_result
+        assert summary["scan_results"]["safety"] == safety_result
         assert len(summary["recommendations"]) > 0
 
         # 統合レポートファイルが作成されることを確認
@@ -181,10 +139,9 @@ class TestSecurityScanner:
         # 目的: エラーがある場合の統合レポート生成を確認
 
         bandit_result = {"status": "error", "message": "bandit failed"}
-        audit_result = {"status": "success", "vulnerabilities_count": 0}
-        sbom_result = {"status": "success", "components_count": 10}
+        safety_result = {"status": "success", "vulnerabilities_count": 0}
 
-        summary = self.scanner.generate_summary_report(bandit_result, audit_result, sbom_result)
+        summary = self.scanner.generate_summary_report(bandit_result, safety_result)
 
         assert summary["overall_status"] == "error"
 
@@ -194,26 +151,26 @@ class TestSecurityScanner:
         # 目的: 警告がある場合の統合レポート生成を確認
 
         bandit_result = {"status": "warning", "message": "bandit warning"}
-        audit_result = {"status": "success", "vulnerabilities_count": 0}
-        sbom_result = {"status": "success", "components_count": 10}
+        safety_result = {"status": "success", "vulnerabilities_count": 0}
 
-        summary = self.scanner.generate_summary_report(bandit_result, audit_result, sbom_result)
+        summary = self.scanner.generate_summary_report(bandit_result, safety_result)
 
         assert summary["overall_status"] == "warning"
 
     @patch.object(SecurityScanner, "run_bandit_scan")
-    @patch.object(SecurityScanner, "run_pip_audit")
-    @patch.object(SecurityScanner, "generate_sbom")
+    @patch.object(SecurityScanner, "run_safety_check")
     @patch.object(SecurityScanner, "generate_summary_report")
-    def test_run_full_scan(self, mock_summary, mock_sbom, mock_audit, mock_bandit):
+    def test_run_full_scan(self, mock_summary, mock_safety, mock_bandit):
         """フルスキャン実行テスト"""
         # 検証対象: SecurityScanner.run_full_scan()
         # 目的: フルスキャンが正常に実行されることを確認
 
         # モックの設定
         mock_bandit.return_value = {"status": "success", "issues_count": 0}
-        mock_audit.return_value = {"status": "success", "vulnerabilities_count": 0}
-        mock_sbom.return_value = {"status": "success", "components_count": 10}
+        mock_safety.return_value = {
+            "status": "success",
+            "vulnerabilities_count": 0,
+        }
         mock_summary.return_value = {
             "overall_status": "success",
             "recommendations": ["テストの推奨事項"],
@@ -223,8 +180,7 @@ class TestSecurityScanner:
 
         # 各スキャンが呼び出されることを確認
         mock_bandit.assert_called_once()
-        mock_audit.assert_called_once()
-        mock_sbom.assert_called_once()
+        mock_safety.assert_called_once()
         mock_summary.assert_called_once()
 
         assert result["overall_status"] == "success"
