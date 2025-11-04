@@ -23,11 +23,6 @@ jobs:
         with:
           python-version: '3.14'
 
-      - name: システム依存関係インストール (lxml用)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libxml2-dev libxslt1-dev
-
       - name: uv セットアップ
         uses: astral-sh/setup-uv@v7
         with:

@@ -76,11 +76,6 @@ jobs:
         with:
           python-version: '3.14'
 
-      - name: Install system dependencies for lxml
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libxml2-dev libxslt1-dev
-
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -163,11 +158,6 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.14'
-
-      - name: Install system dependencies for lxml
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libxml2-dev libxslt1-dev
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
