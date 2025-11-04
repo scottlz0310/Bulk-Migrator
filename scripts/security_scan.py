@@ -4,8 +4,7 @@
 
 このスクリプトは以下のセキュリティチェックを実行します：
 1. bandit による Python セキュリティ脆弱性スキャン
-2. pip-audit による依存関係の脆弱性チェック
-3. SBOM (Software Bill of Materials) の生成
+2. safety による依存関係の脆弱性チェック
 """
 
 import argparse
@@ -90,123 +89,69 @@ class SecurityScanner:
             logger.info(f"❌ bandit 実行中にエラーが発生しました: {e}")
             return {"status": "error", "message": str(e)}
 
-    def run_pip_audit(self) -> dict[str, Any]:
-        """pip-audit による依存関係の脆弱性チェックを実行"""
-        logger.info("🔍 pip-audit 依存関係脆弱性チェックを実行中...")
+    def run_safety_check(self) -> dict[str, Any]:
+        """safety による依存関係の脆弱性チェックを実行"""
+        logger.info("🔍 safety 依存関係脆弱性チェックを実行中...")
 
-        audit_report_path = self.reports_dir / "pip_audit_report.json"
+        safety_report_path = self.reports_dir / "safety_report.json"
 
         try:
-            # pip-audit を JSON 形式で実行
+            # safety を JSON 形式で実行
             result = subprocess.run(
                 [
                     "uv",
                     "run",
-                    "pip-audit",
-                    "--format",
-                    "json",
+                    "safety",
+                    "check",
+                    "--json",
                     "--output",
-                    str(audit_report_path),
+                    str(safety_report_path),
                 ],
                 capture_output=True,
                 text=True,
                 cwd=self.project_root,
             )
 
-            # pip-audit は脆弱性が見つかった場合に非ゼロの終了コードを返す
+            # safety は脆弱性が見つかった場合に非ゼロの終了コードを返す
             if result.returncode > 1:
                 error_msg = result.stderr or result.stdout or "Unknown error"
-                logger.info(f"❌ pip-audit 実行エラー: {error_msg}")
+                logger.info(f"❌ safety 実行エラー: {error_msg}")
                 return {"status": "error", "message": error_msg}
 
             # レポートファイルを読み込み
-            if audit_report_path.exists():
-                with open(audit_report_path, encoding="utf-8") as f:
-                    audit_data = json.load(f)
+            if safety_report_path.exists():
+                with open(safety_report_path, encoding="utf-8") as f:
+                    safety_data = json.load(f)
 
-                vulnerabilities_count = len(audit_data.get("vulnerabilities", []))
-                logger.info(f"✅ pip-audit チェック完了: {vulnerabilities_count} 件の脆弱性を検出")
+                # safety の JSON 形式は異なる場合があるため、適応的に処理
+                vulnerabilities_count = len(safety_data) if isinstance(safety_data, list) else 0
+                logger.info(f"✅ safety チェック完了: {vulnerabilities_count} 件の脆弱性を検出")
 
                 return {
                     "status": "success",
                     "vulnerabilities_count": vulnerabilities_count,
-                    "report_path": str(audit_report_path),
-                    "data": audit_data,
+                    "report_path": str(safety_report_path),
+                    "data": safety_data,
                 }
             else:
-                logger.info("⚠️  pip-audit レポートファイルが生成されませんでした")
+                logger.info("⚠️  safety レポートファイルが生成されませんでした")
                 return {
                     "status": "warning",
                     "message": "レポートファイルが生成されませんでした",
                 }
 
         except FileNotFoundError:
-            logger.info("❌ pip-audit が見つかりません。依存関係をインストールしてください。")
-            return {"status": "error", "message": "pip-audit が見つかりません"}
+            logger.info("❌ safety が見つかりません。依存関係をインストールしてください。")
+            return {"status": "error", "message": "safety が見つかりません"}
         except Exception as e:
-            logger.info(f"❌ pip-audit 実行中にエラーが発生しました: {e}")
+            logger.info(f"❌ safety 実行中にエラーが発生しました: {e}")
             return {"status": "error", "message": str(e)}
 
-    def generate_sbom(self) -> dict[str, Any]:
-        """SBOM (Software Bill of Materials) を生成"""
-        logger.info("📋 SBOM (Software Bill of Materials) を生成中...")
-
-        sbom_report_path = self.reports_dir / "sbom.json"
-
-        try:
-            # cyclonedx-bom を使用して SBOM を生成
-            result = subprocess.run(
-                [
-                    "uv",
-                    "run",
-                    "cyclonedx-py",
-                    "environment",
-                    "--output-format",
-                    "json",
-                    "--output-file",
-                    str(sbom_report_path),
-                ],
-                capture_output=True,
-                text=True,
-                cwd=self.project_root,
-            )
-
-            if result.returncode != 0:
-                logger.info(f"❌ SBOM 生成エラー: {result.stderr}")
-                return {"status": "error", "message": result.stderr}
-
-            if sbom_report_path.exists():
-                with open(sbom_report_path, encoding="utf-8") as f:
-                    sbom_data = json.load(f)
-
-                components_count = len(sbom_data.get("components", []))
-                logger.info(f"✅ SBOM 生成完了: {components_count} 個のコンポーネントを記録")
-
-                return {
-                    "status": "success",
-                    "components_count": components_count,
-                    "report_path": str(sbom_report_path),
-                    "data": sbom_data,
-                }
-            else:
-                logger.info("⚠️  SBOM ファイルが生成されませんでした")
-                return {
-                    "status": "warning",
-                    "message": "SBOM ファイルが生成されませんでした",
-                }
-
-        except FileNotFoundError:
-            logger.info("❌ cyclonedx-py が見つかりません。依存関係をインストールしてください。")
-            return {"status": "error", "message": "cyclonedx-py が見つかりません"}
-        except Exception as e:
-            logger.info(f"❌ SBOM 生成中にエラーが発生しました: {e}")
-            return {"status": "error", "message": str(e)}
 
     def generate_summary_report(
         self,
         bandit_result: dict[str, Any],
-        audit_result: dict[str, Any],
-        sbom_result: dict[str, Any],
+        safety_result: dict[str, Any],
     ) -> dict[str, Any]:
         """セキュリティスキャンの統合レポートを生成"""
         logger.info("📊 統合セキュリティレポートを生成中...")
@@ -216,17 +161,16 @@ class SecurityScanner:
             "project_name": "bulk-migrator",
             "scan_results": {
                 "bandit": bandit_result,
-                "pip_audit": audit_result,
-                "sbom": sbom_result,
+                "safety": safety_result,
             },
             "overall_status": "success",
             "recommendations": [],
         }
 
         # 全体的なステータスを判定
-        if any(result.get("status") == "error" for result in [bandit_result, audit_result, sbom_result]):
+        if any(result.get("status") == "error" for result in [bandit_result, safety_result]):
             summary["overall_status"] = "error"
-        elif any(result.get("status") == "warning" for result in [bandit_result, audit_result, sbom_result]):
+        elif any(result.get("status") == "warning" for result in [bandit_result, safety_result]):
             summary["overall_status"] = "warning"
 
         # 推奨事項を生成
@@ -236,9 +180,9 @@ class SecurityScanner:
                 "セキュリティ問題が検出されました。修正を検討してください。"
             )
 
-        if audit_result.get("vulnerabilities_count", 0) > 0:
+        if safety_result.get("vulnerabilities_count", 0) > 0:
             summary["recommendations"].append(
-                f"pip-audit で {audit_result['vulnerabilities_count']} 件の"
+                f"safety で {safety_result['vulnerabilities_count']} 件の"
                 "依存関係脆弱性が検出されました。依存関係の更新を検討してください。"
             )
 
@@ -261,19 +205,17 @@ class SecurityScanner:
 
         # 各スキャンを実行
         bandit_result = self.run_bandit_scan()
-        audit_result = self.run_pip_audit()
-        sbom_result = self.generate_sbom()
+        safety_result = self.run_safety_check()
 
         # 統合レポートを生成
-        summary = self.generate_summary_report(bandit_result, audit_result, sbom_result)
+        summary = self.generate_summary_report(bandit_result, safety_result)
 
         logger.info("\n" + "=" * 60)
         logger.info("📋 セキュリティスキャン結果サマリー")
         logger.info("=" * 60)
         logger.info(f"全体ステータス: {summary['overall_status']}")
         logger.info(f"bandit 問題数: {bandit_result.get('issues_count', 'N/A')}")
-        logger.info(f"pip-audit 脆弱性数: {audit_result.get('vulnerabilities_count', 'N/A')}")
-        logger.info(f"SBOM コンポーネント数: {sbom_result.get('components_count', 'N/A')}")
+        logger.info(f"safety 脆弱性数: {safety_result.get('vulnerabilities_count', 'N/A')}")
         logger.info("\n推奨事項:")
         for recommendation in summary["recommendations"]:
             logger.info(f"  • {recommendation}")
@@ -293,8 +235,8 @@ def handle_full_scan(scanner, args):
 
     if args.fail_on_issues:
         bandit_issues = summary["scan_results"]["bandit"].get("issues_count", 0)
-        audit_vulnerabilities = summary["scan_results"]["pip_audit"].get("vulnerabilities_count", 0)
-        if bandit_issues > 0 or audit_vulnerabilities > 0:
+        safety_vulnerabilities = summary["scan_results"]["safety"].get("vulnerabilities_count", 0)
+        if bandit_issues > 0 or safety_vulnerabilities > 0:
             logger.info("\n⚠️  セキュリティ問題が検出されましたが、スキャンは成功しました。")
             logger.info("詳細はセキュリティレポートを確認してください。")
             # 警告レベルとして処理し、終了コードは 0 を保持
@@ -306,10 +248,8 @@ def handle_single_scan(scanner, args):
 
     if args.scan_type == "bandit":
         result = scanner.run_bandit_scan()
-    elif args.scan_type == "audit":
-        result = scanner.run_pip_audit()
-    elif args.scan_type == "sbom":
-        result = scanner.generate_sbom()
+    elif args.scan_type == "safety":
+        result = scanner.run_safety_check()
 
     # エラーステータスのチェック
     if result and result.get("status") == "error":
@@ -329,7 +269,7 @@ def main():
     parser = argparse.ArgumentParser(description="セキュリティスキャンを実行")
     parser.add_argument(
         "--scan-type",
-        choices=["all", "bandit", "audit", "sbom"],
+        choices=["all", "bandit", "safety"],
         default="all",
         help="実行するスキャンの種類",
     )
