@@ -37,7 +37,6 @@ build/
 .env.*
 !.env.renovate.example
 .vscode.bak.*
-uv.lock
 .DS_Store
 Thumbs.db
 *.log
