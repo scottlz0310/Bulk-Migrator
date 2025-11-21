@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: チェックアウト
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Python セットアップ
         uses: actions/setup-python@v6
