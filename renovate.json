@@ -6,5 +6,13 @@
     "github>scottlz0310/renovate-config//presets/tools/precommit",
     "github>scottlz0310/renovate-config//presets/options/automerge",
     "github>scottlz0310/renovate-config//presets/options/security"
+  ],
+  "packageRules": [
+    {
+      "description": "Only suggest stable Python versions for requires-python",
+      "matchManagers": ["pep621"],
+      "matchDepNames": ["python"],
+      "ignoreUnstable": true
+    }
   ]
 }
