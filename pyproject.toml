@@ -20,7 +20,7 @@ dependencies = [
     "safety>=3.7.0",
     "cryptography>=46.0.3",
     "rich>=14.2.0",
-    "typer>=0.20.1",
+    "typer>=0.21.0",
     "yamllint>=1.37.1",
 ]
 
