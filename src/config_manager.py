@@ -213,9 +213,11 @@ class SecureConfigManager(ConfigManager):
         for pattern in self.SENSITIVE_PATTERNS:
             masked_text = re.sub(
                 pattern,
-                lambda m: f"{m.group(0).split('=')[0]}=[MASKED]"
-                if "=" in m.group(0)
-                else f"{m.group(0).split(':')[0]}:[MASKED]",
+                lambda m: (
+                    f"{m.group(0).split('=')[0]}=[MASKED]"
+                    if "=" in m.group(0)
+                    else f"{m.group(0).split(':')[0]}:[MASKED]"
+                ),
                 masked_text,
                 flags=re.IGNORECASE,
             )
