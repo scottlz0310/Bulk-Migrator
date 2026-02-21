@@ -75,22 +75,22 @@ class TestSecurityScanner:
 
     @patch("subprocess.run")
     def test_run_safety_check_success(self, mock_subprocess):
-        """safetyスキャン成功テスト"""
+        """依存関係スキャン成功テスト（pip-audit）"""
         # 検証対象: SecurityScanner.run_safety_check()
-        # 目的: safetyスキャンが正常に実行されることを確認
+        # 目的: 依存関係スキャンが正常に実行されることを確認
 
         mock_subprocess.return_value = MagicMock(returncode=0, stderr="")
 
-        # テスト用のsafetyレポートを作成
+        # テスト用の pip-audit レポートを作成
         safety_report = [
             {
-                "package": "test-package",
-                "vulnerability_id": "CVE-2023-1234",
-                "severity": "HIGH",
+                "name": "test-package",
+                "version": "1.0.0",
+                "vulns": [{"id": "PYSEC-0000", "description": "test"}],
             }
         ]
 
-        safety_report_path = self.scanner.reports_dir / "safety_report.json"
+        safety_report_path = self.scanner.reports_dir / "pip_audit_report.json"
         with open(safety_report_path, "w") as f:
             json.dump(safety_report, f)
 
@@ -98,7 +98,7 @@ class TestSecurityScanner:
 
         assert result["status"] == "success"
         assert result["vulnerabilities_count"] == 1
-        assert "safety_report.json" in result["report_path"]
+        assert "pip_audit_report.json" in result["report_path"]
 
     @patch("subprocess.run")
     def test_run_safety_check_error(self, mock_subprocess):

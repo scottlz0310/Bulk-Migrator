@@ -4,7 +4,7 @@
 
 このスクリプトは以下のセキュリティチェックを実行します：
 1. bandit による Python セキュリティ脆弱性スキャン
-2. safety による依存関係の脆弱性チェック
+2. pip-audit による依存関係の脆弱性チェック
 """
 
 import argparse
@@ -89,21 +89,35 @@ class SecurityScanner:
             logger.info(f"❌ bandit 実行中にエラーが発生しました: {e}")
             return {"status": "error", "message": str(e)}
 
-    def run_safety_check(self) -> dict[str, Any]:
-        """safety による依存関係の脆弱性チェックを実行"""
-        logger.info("🔍 safety 依存関係脆弱性チェックを実行中...")
+    @staticmethod
+    def _count_pip_audit_vulnerabilities(report_data: Any) -> int:
+        """pip-audit の JSON レポートから脆弱性件数を集計"""
+        if not isinstance(report_data, list):
+            return 0
 
-        safety_report_path = self.reports_dir / "safety_report.json"
+        vulnerabilities_count = 0
+        for package in report_data:
+            if isinstance(package, dict):
+                vulnerabilities = package.get("vulns", [])
+                if isinstance(vulnerabilities, list):
+                    vulnerabilities_count += len(vulnerabilities)
+        return vulnerabilities_count
+
+    def run_safety_check(self) -> dict[str, Any]:
+        """pip-audit による依存関係の脆弱性チェックを実行（互換メソッド名）"""
+        logger.info("🔍 pip-audit 依存関係脆弱性チェックを実行中...")
+
+        safety_report_path = self.reports_dir / "pip_audit_report.json"
 
         try:
-            # safety を JSON 形式で実行
+            # pip-audit を JSON 形式で実行
             result = subprocess.run(
                 [
                     "uv",
                     "run",
-                    "safety",
-                    "check",
-                    "--json",
+                    "pip-audit",
+                    "--format",
+                    "json",
                     "--output",
                     str(safety_report_path),
                 ],
@@ -112,10 +126,11 @@ class SecurityScanner:
                 cwd=self.project_root,
             )
 
-            # safety は脆弱性が見つかった場合に非ゼロの終了コードを返す
+            # pip-audit は脆弱性が見つかった場合に終了コード 1 を返す
+            # 終了コード 0: 問題なし, 1: 問題あり, 2+: エラー
             if result.returncode > 1:
                 error_msg = result.stderr or result.stdout or "Unknown error"
-                logger.info(f"❌ safety 実行エラー: {error_msg}")
+                logger.info(f"❌ pip-audit 実行エラー: {error_msg}")
                 return {"status": "error", "message": error_msg}
 
             # レポートファイルを読み込み
@@ -123,9 +138,8 @@ class SecurityScanner:
                 with open(safety_report_path, encoding="utf-8") as f:
                     safety_data = json.load(f)
 
-                # safety の JSON 形式は異なる場合があるため、適応的に処理
-                vulnerabilities_count = len(safety_data) if isinstance(safety_data, list) else 0
-                logger.info(f"✅ safety チェック完了: {vulnerabilities_count} 件の脆弱性を検出")
+                vulnerabilities_count = self._count_pip_audit_vulnerabilities(safety_data)
+                logger.info(f"✅ pip-audit チェック完了: {vulnerabilities_count} 件の脆弱性を検出")
 
                 return {
                     "status": "success",
@@ -134,17 +148,17 @@ class SecurityScanner:
                     "data": safety_data,
                 }
             else:
-                logger.info("⚠️  safety レポートファイルが生成されませんでした")
+                logger.info("⚠️  pip-audit レポートファイルが生成されませんでした")
                 return {
                     "status": "warning",
                     "message": "レポートファイルが生成されませんでした",
                 }
 
         except FileNotFoundError:
-            logger.info("❌ safety が見つかりません。依存関係をインストールしてください。")
-            return {"status": "error", "message": "safety が見つかりません"}
+            logger.info("❌ pip-audit が見つかりません。依存関係をインストールしてください。")
+            return {"status": "error", "message": "pip-audit が見つかりません"}
         except Exception as e:
-            logger.info(f"❌ safety 実行中にエラーが発生しました: {e}")
+            logger.info(f"❌ pip-audit 実行中にエラーが発生しました: {e}")
             return {"status": "error", "message": str(e)}
 
     def generate_summary_report(
@@ -181,7 +195,7 @@ class SecurityScanner:
 
         if safety_result.get("vulnerabilities_count", 0) > 0:
             summary["recommendations"].append(
-                f"safety で {safety_result['vulnerabilities_count']} 件の"
+                f"pip-audit で {safety_result['vulnerabilities_count']} 件の"
                 "依存関係脆弱性が検出されました。依存関係の更新を検討してください。"
             )
 
@@ -214,7 +228,7 @@ class SecurityScanner:
         logger.info("=" * 60)
         logger.info(f"全体ステータス: {summary['overall_status']}")
         logger.info(f"bandit 問題数: {bandit_result.get('issues_count', 'N/A')}")
-        logger.info(f"safety 脆弱性数: {safety_result.get('vulnerabilities_count', 'N/A')}")
+        logger.info(f"pip-audit 脆弱性数: {safety_result.get('vulnerabilities_count', 'N/A')}")
         logger.info("\n推奨事項:")
         for recommendation in summary["recommendations"]:
             logger.info(f"  • {recommendation}")

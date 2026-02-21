@@ -17,11 +17,11 @@ dependencies = [
     "types-requests>=2.32.4.20260107",
     "pre-commit>=4.5.1",
     "bandit[toml]>=1.9.3",
-    "safety>=3.7.0",
     "cryptography>=46.0.5",
     "rich>=14.3.3",
     "typer>=0.23.2",
     "yamllint>=1.38.0",
+    "pip-audit>=2.10.0",
 ]
 
 [tool.ruff]

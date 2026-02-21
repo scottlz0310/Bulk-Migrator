@@ -19,7 +19,7 @@ Microsoft 365 環境で OneDrive から SharePoint Online へ大容量コンテ�
 - `src/rebuild_skip_list.py`: SharePoint 側をクロールしてスキップリストを生成し、`python main.py rebuild-skiplist` で実行可能。
 - `src/watchdog.py`: ログを監視し、一定時間更新が止まった場合に `src.main` を自動再起動。`python main.py watchdog` で起動。
 - `src/quality_metrics.py` / `src/quality_alerts.py`: 品質メトリクス収集とアラートの生成。`python main.py quality-metrics` / `python main.py quality-alerts` で実行。
-- `scripts/security_scan.py`: bandit・safety を一括で実行するセキュリティスキャン。`python main.py security-scan` で起動。
+- `scripts/security_scan.py`: bandit・pip-audit を一括で実行するセキュリティスキャン。`python main.py security-scan` で起動。
 - `utils/` 配下: クロール CLI、統計算出、検証ツールなどの補助スクリプト。`python main.py file-crawler` からヘルプ確認。
 
 ## CLI ランチャー
@@ -162,7 +162,7 @@ Bulk-Migrator/
 - `uv run mypy src/`: 型チェック。
 - `uv run python src/quality_metrics.py`: 品質メトリクスの収集と `quality_reports/metrics_*.json` への保存。
 - `uv run python src/quality_alerts.py --check`: 閾値チェックとアラート生成（`quality_reports/alerts/`）。
-- `uv run python scripts/security_scan.py`: bandit・safety の一括実行（`security_reports/`）。
+- `uv run python scripts/security_scan.py`: bandit・pip-audit の一括実行（`security_reports/`）。
 - `make lint` / `make test` / `make quality`: uv コマンドをまとめて実行するショートカット。
 
 ## 依存関係の自動更新（Renovate）
