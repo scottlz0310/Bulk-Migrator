@@ -2,30 +2,48 @@
 
 ## 1. 目的
 
-本計画書は、現行 Python 実装の仕様を欠落なく引き継ぎつつ、**並列実行に強い言語（Go）**で新規リポジトリへリライトするための実装計画を定義する。
+本計画書は、現行 Python 実装の仕様を欠落なく引き継ぎつつ、**並列実行に強い言語（C#/.NET）**で新規リポジトリへリライトするための実装計画を定義する。
 
 - 対象: OneDrive → SharePoint の大容量移行ツール群
 - 方針: 仕様互換を最優先し、段階的に置換する
-- 成果物: 新規リポジトリ（Go 実装、CI、運用ドキュメント、移行手順）
+- 成果物: 新規リポジトリ（.NET 実装、CI、運用ドキュメント、移行手順）
 
 ---
 
 ## 2. 採用技術（リライト先）
 
 ### 2.1 言語・実行基盤
-- **Go 1.24+**
+- **C# / .NET 8 LTS（.NET 10 互換方針）**
 - 採用理由:
-  - goroutine + channel による高効率並列処理
-  - context によるキャンセル・タイムアウト伝播
-  - 単一バイナリ配布で運用が容易（Windows/Linux/macOS）
-  - 型安全・実行性能・監視実装のしやすさ
+  - `Parallel.ForEachAsync` による上限付き並列処理
+  - `System.Threading.Channels` による背圧制御（有界キュー）
+  - Microsoft Graph SDK の大容量アップロード支援（再開・進捗）
+  - 単一配布（self-contained）と運用性の高さ
 
 ### 2.2 推奨ライブラリ
-- CLI: `cobra` / `urfave/cli`（どちらか統一）
-- 設定: `viper`（env > file > default を厳密実装）
-- 構造化ログ: `zap` or `zerolog`（JSON必須）
-- HTTP: 標準 `net/http` + retry/middleware
-- テスト: `testing`, `testify`, `gomock`
+- CLI: `System.CommandLine`
+- 設定: `Microsoft.Extensions.Configuration`（env > file > default）
+- 構造化ログ: `Microsoft.Extensions.Logging` + JSON sink（Serilog等）
+- HTTP: `HttpClient` / `SocketsHttpHandler`
+- Graph: Microsoft Graph SDK（LargeFileUploadTask, RetryHandler）
+- テスト: `xUnit` / `NUnit` + `FluentAssertions` + `Moq`
+
+### 2.3 計画見直し提案の採否（2026-02-23）
+
+| 項目 | 判定 | 理由 |
+|---|---|---|
+| Go→.NET への方針転換 | 採用 | 現行スコープが Graph 中心で、SDK活用により実装リスクを下げられるため |
+| Channels + Parallel.ForEachAsync | 採用 | 背圧と上限付き並列を標準機能で実装できるため |
+| Graph Retry-After 厳守 | 採用 | 429/一時障害への運用要件と整合するため |
+| Native AOT を必須化 | 条件付き採用 | 効果は高いが、トリミング制約の検証完了後に有効化するため |
+| Dropbox 先行フェーズ化 | 現フェーズ不採用（将来採用） | 現行要件外のため先行実装はしないが、拡張点を先に固定して手戻りを抑制する |
+
+### 2.4 将来 Dropbox 拡張の手戻り最小化方針
+
+- ストレージ実装は `IStorageProvider`（仮称）で抽象化し、Graph 実装はその1実装として構築する。
+- 設定は `providers.graph.*` / `providers.dropbox.*` の名前空間で分離し、クラウド別のチャンク/DoP/リトライを初期から表現可能にする。
+- セッション再開情報・転送マニフェストは provider フィールドを含む共通フォーマットで永続化する。
+- 受入テストは provider 共通テスト + provider 固有テストの2層構成にし、Dropbox 追加時の回帰を最小化する。
 
 ---
 
@@ -82,28 +100,22 @@
 
 ---
 
-## 4. 新規リポジトリアーキテクチャ案（Go）
+## 4. 新規リポジトリアーキテクチャ案（.NET）
 
 ```text
-bulk-migrator-go/
-├─ cmd/
-│  ├─ migrator/              # メインCLI
-│  └─ file-crawler/          # 補助CLI
-├─ internal/
-│  ├─ config/                # env+json統合設定
-│  ├─ auth/                  # Graph認証・token管理
-│  ├─ graph/                 # Graph API client
-│  ├─ crawl/                 # OneDrive/SharePoint再帰クロール
-│  ├─ transfer/              # small/large upload, retry, worker pool
-│  ├─ skiplist/              # skip list + lock
-│  ├─ watchdog/              # 監視・再起動
-│  ├─ logging/               # structured + masking
-│  ├─ quality/               # metrics/alerts/reports
-│  └─ security/              # scan/audit
+bulk-migrator-dotnet/
+├─ src/
+│  ├─ BulkMigrator.Cli/            # メインCLI
+│  ├─ BulkMigrator.Core/           # ドメイン・ユースケース
+│  ├─ BulkMigrator.Providers.Abstractions/ # IStorageProvider等の契約
+│  ├─ BulkMigrator.Providers.Graph/        # Graph認証/転送
+│  ├─ BulkMigrator.Providers.Dropbox/      # 将来拡張（初期は実装スケルトンのみ）
+│  ├─ BulkMigrator.Observability/  # 構造化ログ・メトリクス
+│  └─ BulkMigrator.Testing/        # テスト共通
 ├─ configs/
 │  └─ config.json
 ├─ docs/
-├─ scripts/
+├─ tools/
 ├─ test/
 │  ├─ unit/
 │  ├─ integration/
@@ -113,25 +125,23 @@ bulk-migrator-go/
 
 ---
 
-## 5. 並列実行設計（Goでの強化ポイント）
+## 5. 並列実行設計（.NETでの強化ポイント）
 
-1. **転送ワーカープール**
-   - 入力: クロール済みファイルチャネル
-   - ワーカー数: `max_parallel_transfers`
-   - 出力: 成功/失敗イベントチャネル
+1. **有界キュー（背圧）**
+   - `Channel.CreateBounded<TransferJob>(capacity)` を使用
+   - クロール側と転送側を分離しつつ、メモリ上限を維持
 
-2. **大容量チャンク送信**
-   - ファイル単位はワーカー並列
-   - チャンク送信は順序維持（Graph仕様準拠）
-   - コンテキストタイムアウトと再試行を統合
+2. **上限付き並列転送**
+   - `Parallel.ForEachAsync` と `MaxDegreeOfParallelism` で制御
+   - `CancellationToken` により安全停止
 
-3. **バックプレッシャー**
-   - bounded channel によるメモリ上限管理
-   - クロールと転送のパイプライン化（必要時）
+3. **大容量ファイル転送**
+   - Graph SDK の `LargeFileUploadTask` を優先採用
+   - チャンク送信・進捗・再開を SDK 標準で実現
 
-4. **キャンセル制御**
-   - `context.Context` を全レイヤに伝播
-   - SIGINT/SIGTERM 時に進行中ジョブを安全停止
+4. **再試行ポリシー**
+   - Graph は `Retry-After` 準拠の再試行を適用
+   - その他一時障害は指数バックオフ＋ジッターで統一
 
 ---
 
@@ -142,21 +152,25 @@ bulk-migrator-go/
 - 旧ドキュメントとの差分（`doc/`, `doc/old/`）を一覧化
 
 ### Phase 1: プロジェクト基盤
-- Go module 初期化
+- .NET solution / project 初期化
 - Lint/Format/Test/CI 雛形
 - 設定ローダ（env > json > default）
+- provider 抽象契約（IStorageProvider）と共通転送モデルを確定
 
 ### Phase 2: 認証・Graph基盤
 - client credentials 認証
 - Graph API クライアント共通化（retry, timeout, rate-limit対応）
+- LargeFileUploadTask を利用した大容量アップロード PoC
+- provider 契約に沿って Graph 実装を接続（将来Dropbox差替え可能な形を維持）
 
 ### Phase 3: クロール + スキップリスト
 - OneDrive/SharePoint 再帰クロール
 - skip_list 読み書き、ロック制御、判定規約（path+name）
 
 ### Phase 4: 転送エンジン
-- small/large upload 実装
+- small/large upload 実装（SDK優先）
 - 失敗リトライ、フォルダ自動作成、並列転送
+- セッション再開と部分再送の永続化
 
 ### Phase 5: 実行モード互換
 - `--reset`, `--full-rebuild`, 通常実行の互換動作
@@ -170,7 +184,8 @@ bulk-migrator-go/
 ### Phase 7: 補助CLI・運用機能
 - file_crawler 系サブコマンド
 - validate/explore/compare
-- 既存運用 Runbook を Go 版へ移植
+- 既存運用 Runbook を .NET 版へ移植
+- Dropbox 拡張用の空実装テンプレートと開発ガイドを整備（機能実装は範囲外）
 
 ### Phase 8: E2E・性能検証・切替
 - 実データに近い E2E
@@ -212,7 +227,7 @@ bulk-migrator-go/
 
 1. 新リポジトリで v0 系を段階リリース
 2. 既存 Python 実装と並行稼働（同一入力で比較）
-3. 主要ジョブを Go 版へ段階切替
+3. 主要ジョブを .NET 版へ段階切替
 4. watchdog/監視系を最後に切替
 5. 旧実装を read-only 化し保守モードへ
 
@@ -222,6 +237,8 @@ bulk-migrator-go/
 
 - Graph API のレート制限/一時エラー  
   → 指数バックオフ + ジッター + 上限付き再試行
+- Native AOT のトリミング/Reflection 制約  
+  → AOT 検証ジョブを CI に追加し、非互換依存を段階除去
 - 仕様取りこぼし  
   → FR/NFR/OPS ID ごとの受入テストを必須化
 - ログ互換崩れ  
@@ -234,7 +251,7 @@ bulk-migrator-go/
 ## 11. 完了条件（Definition of Done）
 
 - FR/NFR/OPS の全 ID に対するテストが green
-- 既存運用コマンドに対応する Go CLI が提供済み
+- 既存運用コマンドに対応する .NET CLI が提供済み
 - 既存品質ゲート（lint/type/test/security/coverage）を新リポジトリで再現
 - 本番想定データでの転送成功率・再実行安全性・監視挙動を確認
 - 運用手順書（セットアップ、日次運用、障害対応、ロールバック）を更新済み
