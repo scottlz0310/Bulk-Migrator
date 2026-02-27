@@ -141,7 +141,7 @@ jobs:
           GITLEAKS_CONFIG: .gitleaks.toml
 
       - name: Run TruffleHog
-        uses: trufflesecurity/trufflehog@v3.93.5
+        uses: trufflesecurity/trufflehog@v3.93.6
         with:
           path: .
           extra_args: --only-verified
