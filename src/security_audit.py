@@ -254,7 +254,7 @@ class AccessController:
             if any(sensitive in file_path.lower() for sensitive in [".env", "secret", "key"]):
                 os.chmod(file_path, 0o600)  # 所有者のみ読み書き
             else:
-                os.chmod(file_path, 0o644)  # 標準権限
+                os.chmod(file_path, 0o600)  # 所有者のみ読み書き（Security alert対策）
             return True
         except OSError:
             return False

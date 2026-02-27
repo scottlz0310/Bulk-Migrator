@@ -24,7 +24,7 @@ icacls .env /inheritance:r /grant:r "%USERNAME%:F"
 # Linux/macOS
 chmod 600 .env
 chmod 600 *.key
-chmod 644 config/config.json
+chmod 600 config/config.json
 ```
 
 ## 実行時セキュリティ
