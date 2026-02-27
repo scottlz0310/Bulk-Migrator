@@ -1,0 +1,8 @@
+title = "Bulk Migrator gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Ignore synthetic secrets used in logger masking tests"
+paths = ['''^tests/(unit/)?test_logger\.py$''']
