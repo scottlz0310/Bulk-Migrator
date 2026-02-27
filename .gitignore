@@ -74,6 +74,7 @@ codeql-results/
 *secret*
 *credential*
 *password*
+!.github/secret_scanning.yml
 .bulk_migrator_key
 config_hash.txt
 
