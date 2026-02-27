@@ -85,7 +85,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv venv --python 3.13
+          uv venv --python 3.14
           uv sync
 
       - name: Run security scan
@@ -170,7 +170,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv venv --python 3.13
+          uv venv --python 3.14
           uv sync
 
       - name: Generate SBOM
@@ -180,6 +180,7 @@ jobs:
           uv run pip-audit --format cyclonedx-json --output security_reports/sbom.json
           status=$?
           set -e
+          # pip-audit returns 1 when vulnerabilities are detected; treat it as non-fatal for SBOM generation.
           if [ "$status" -gt 1 ]; then
             echo "SBOM generation failed while executing pip-audit."
             exit "$status"
@@ -189,7 +190,7 @@ jobs:
         run: |
           if [ -f security_reports/sbom.json ]; then
             echo 'SBOM generated successfully.'
-            jq '.metadata.timestamp // "timestamp unavailable"' security_reports/sbom.json
+            jq '.metadata.timestamp? // "timestamp unavailable"' security_reports/sbom.json
           else
             echo 'SBOM generation failed.'
             exit 1
