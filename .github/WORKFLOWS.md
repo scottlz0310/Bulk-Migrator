@@ -22,7 +22,7 @@
   - 品質基準未達時のマージブロック
 
 ### 3. セキュリティスキャン (`security-scan.yml`)
-- **トリガー**: pull_request (main, develop), 手動実行 (`workflow_dispatch`)
+- **トリガー**: push (main, develop), pull_request (main, develop), 手動実行 (`workflow_dispatch`)
 - **実行内容**:
   - CodeQL セキュリティ分析
   - 依存関係脆弱性スキャン (pip-audit)
