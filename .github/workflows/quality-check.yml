@@ -107,7 +107,7 @@ jobs:
 
       - name: Publish test report
         if: (success() || failure()) && github.event_name != 'act_local'
-        uses: dorny/test-reporter@v2
+        uses: dorny/test-reporter@v3
         continue-on-error: true
         with:
           name: Test results (${{ matrix.os }}, Python ${{ matrix.python-version }})
