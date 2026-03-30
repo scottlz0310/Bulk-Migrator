@@ -76,7 +76,7 @@ requires-dist = [
     { name = "rich", specifier = ">=14.3.3" },
     { name = "ruff", specifier = ">=0.15.8" },
     { name = "typer", specifier = ">=0.24.1" },
-    { name = "types-requests", specifier = ">=2.32.4.20260324" },
+    { name = "types-requests", specifier = ">=2.33.0.20260327" },
     { name = "yamllint", specifier = ">=1.38.0" },
 ]
 
